@@ -1,0 +1,213 @@
+'use client'
+
+import { useState } from 'react'
+import { X, Check, CalendarDays } from 'lucide-react'
+import { useCalendarStore } from '@/store/calendarStore'
+import { getDateRange, formatDateLabel } from '@/lib/date'
+import { CATEGORIES } from '@/lib/categories'
+
+const PRESET_COLORS = [
+  '#ef4444', '#f97316', '#f59e0b', '#eab308',
+  '#84cc16', '#22c55e', '#10b981', '#14b8a6',
+  '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
+  '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
+  '#fca5a5', '#fdba74', '#86efac', '#67e8f9',
+  '#b91c1c', '#15803d', '#1d4ed8', '#7c3aed',
+]
+
+type Props = {
+  startDate: string
+  endDate: string
+  onClose: () => void
+}
+
+export default function RangeAddModal({ startDate, endDate, onClose }: Props) {
+  const { addEvent } = useCalendarStore()
+  const [title, setTitle] = useState('')
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
+  const [color, setColor] = useState(PRESET_COLORS[0]) // red 기본
+  const [reminder, setReminder] = useState<number | undefined>(undefined)
+  const [category, setCategory] = useState<string | undefined>(undefined)
+
+  const dates = getDateRange(startDate, endDate)
+  const isSameDay = dates.length === 1
+  const rangeLabel = isSameDay
+    ? formatDateLabel(dates[0])
+    : `${formatDateLabel(dates[0])} – ${formatDateLabel(dates[dates.length - 1])}`
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim()) return
+    addEvent({
+      id: crypto.randomUUID(),
+      title: title.trim(),
+      date: dates[0],
+      endDate: dates.length > 1 ? dates[dates.length - 1] : undefined,
+      startTime: startTime || undefined,
+      endTime: endTime || undefined,
+      color,
+      reminder,
+      category,
+    })
+    onClose()
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-sm shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
+          <h2 className="text-base font-semibold">일정 추가</h2>
+          <button onClick={onClose} className="text-neutral-500 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="p-5">
+          {/* 날짜 범위 표시 */}
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-neutral-800 mb-4">
+            <CalendarDays size={14} className="text-neutral-400 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm text-white font-medium truncate">{rangeLabel}</p>
+              {!isSameDay && (
+                <p className="text-xs text-neutral-500 mt-0.5">총 {dates.length}일 · 연속 일정으로 등록됩니다</p>
+              )}
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div>
+              <label className="text-xs text-neutral-400 mb-1.5 block">제목</label>
+              <input
+                autoFocus
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="일정 제목을 입력하세요"
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-neutral-500 outline-none focus:border-neutral-500 transition-colors"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-xs text-neutral-400 mb-1.5 block">시작 시간</label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-neutral-500 transition-colors [color-scheme:dark]"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-neutral-400 mb-1.5 block">종료 시간</label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-neutral-500 transition-colors [color-scheme:dark]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-neutral-400 mb-1.5 block">카테고리</label>
+              <div className="flex gap-1.5 flex-wrap">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategory(category === cat.id ? undefined : cat.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      category === cat.id
+                        ? 'bg-white text-neutral-900'
+                        : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'
+                    }`}
+                  >
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-neutral-400 mb-1.5 block">미리 알림</label>
+              <div className="flex gap-1.5 flex-wrap">
+                {([
+                  { label: '없음', value: undefined },
+                  { label: '10분 전', value: 10 },
+                  { label: '30분 전', value: 30 },
+                  { label: '1시간 전', value: 60 },
+                  { label: '하루 전', value: 1440 },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    onClick={async () => {
+                      setReminder(opt.value as number | undefined)
+                      if (opt.value !== undefined && 'Notification' in window && Notification.permission === 'default') {
+                        await Notification.requestPermission()
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      reminder === (opt.value as number | undefined)
+                        ? 'bg-white text-neutral-900'
+                        : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {reminder !== undefined && !startTime && (
+                <p className="text-xs text-amber-400 mt-1.5">시작 시간을 설정해야 알림이 작동합니다</p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-xs text-neutral-400 mb-2 block">색상</label>
+              <div className="grid grid-cols-8 gap-2">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setColor(c)}
+                    className="w-7 h-7 rounded-full transition-transform hover:scale-110 focus:outline-none"
+                    style={{
+                      backgroundColor: c,
+                      boxShadow: color === c ? `0 0 0 2px #171717, 0 0 0 4px ${c}` : 'none',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-1">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-neutral-800 text-neutral-400 hover:bg-neutral-700 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                type="submit"
+                disabled={!title.trim()}
+                className="flex items-center justify-center gap-1.5 flex-1 py-2.5 rounded-lg text-sm font-medium bg-white text-neutral-900 hover:bg-neutral-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Check size={14} />
+                추가
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}

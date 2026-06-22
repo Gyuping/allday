@@ -1,0 +1,62 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import type { PomodoroSettings, PomodoroPhase } from '@/types'
+
+const DEFAULT_SETTINGS: PomodoroSettings = {
+  workMinutes: 25,
+  shortBreakMinutes: 5,
+  longBreakMinutes: 15,
+  sessionsBeforeLongBreak: 4,
+}
+
+type PomodoroStore = {
+  settings: PomodoroSettings
+  phase: PomodoroPhase
+  sessionCount: number
+  isRunning: boolean
+  secondsLeft: number
+  updateSettings: (settings: Partial<PomodoroSettings>) => void
+  setPhase: (phase: PomodoroPhase) => void
+  setRunning: (running: boolean) => void
+  setSecondsLeft: (seconds: number) => void
+  incrementSession: () => void
+  reset: () => void
+}
+
+export const usePomodoroStore = create<PomodoroStore>()(
+  persist(
+    (set, get) => ({
+      settings: DEFAULT_SETTINGS,
+      phase: 'work',
+      sessionCount: 0,
+      isRunning: false,
+      secondsLeft: DEFAULT_SETTINGS.workMinutes * 60,
+      updateSettings: (updated) =>
+        set((s) => ({
+          settings: { ...s.settings, ...updated },
+        })),
+      setPhase: (phase) =>
+        set((s) => {
+          const mins =
+            phase === 'work'
+              ? s.settings.workMinutes
+              : phase === 'shortBreak'
+              ? s.settings.shortBreakMinutes
+              : s.settings.longBreakMinutes
+          return { phase, secondsLeft: mins * 60, isRunning: false }
+        }),
+      setRunning: (running) => set({ isRunning: running }),
+      setSecondsLeft: (seconds) => set({ secondsLeft: seconds }),
+      incrementSession: () =>
+        set((s) => ({ sessionCount: s.sessionCount + 1 })),
+      reset: () => {
+        const { settings } = get()
+        set({ secondsLeft: settings.workMinutes * 60, isRunning: false, phase: 'work' })
+      },
+    }),
+    {
+      name: 'allay-pomodoro',
+      partialize: (s) => ({ settings: s.settings }),
+    }
+  )
+)

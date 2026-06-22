@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-Process *)",
+      "PowerShell(Stop-Process *)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:3000/api/holidays?year=2026\" -Method Get | Select-Object -ExpandProperty Content)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:3000/api/holidays?year=2026\" -Method Get } catch { $_.Exception.Response.GetResponseStream\\(\\) | ForEach-Object { $reader = New-Object System.IO.StreamReader\\($_\\); $reader.ReadToEnd\\(\\) } })"
+    ]
+  }
+}
