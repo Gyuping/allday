@@ -1,5 +1,10 @@
+// 포모도로 타이머 완료 시 재생되는 효과음
+// 브라우저 내장 Web Audio API로 직접 사운드를 합성한다 (파일 없이 동작).
+
+// 벨 소리 하나를 생성하는 내부 함수
+// freq: 주파수(Hz), when: 재생 시작 시간, vol: 볼륨, decay: 잔향 길이(초)
+// 비조화 배음(2.756배)을 섞어 실제 벨처럼 들리게 한다.
 function bell(ctx: AudioContext, freq: number, when: number, vol: number, decay: number) {
-  // 기본 사인파
   const osc1 = ctx.createOscillator()
   const g1 = ctx.createGain()
   osc1.connect(g1)
@@ -7,12 +12,12 @@ function bell(ctx: AudioContext, freq: number, when: number, vol: number, decay:
   osc1.type = 'sine'
   osc1.frequency.value = freq
   g1.gain.setValueAtTime(0, when)
-  g1.gain.linearRampToValueAtTime(vol, when + 0.008)
-  g1.gain.exponentialRampToValueAtTime(0.0001, when + decay)
+  g1.gain.linearRampToValueAtTime(vol, when + 0.008)       // 아주 짧게 볼륨을 올려 타격감 표현
+  g1.gain.exponentialRampToValueAtTime(0.0001, when + decay) // 지수적으로 감소 → 자연스러운 잔향
   osc1.start(when)
   osc1.stop(when + decay + 0.02)
 
-  // 비조화 배음(2.756배) — 벨 특유의 맑은 느낌
+  // 비조화 배음(2.756배) — 이 배율이 벨 특유의 맑은 금속음을 만든다
   const osc2 = ctx.createOscillator()
   const g2 = ctx.createGain()
   osc2.connect(g2)
@@ -26,7 +31,7 @@ function bell(ctx: AudioContext, freq: number, when: number, vol: number, decay:
   osc2.stop(when + decay + 0.02)
 }
 
-// 집중 완료: C5 → E5 → G5 상행 체임 (보상감 있는 3음)
+// 집중 완료 시 재생 — C5→E5→G5 상행 화음 (보상감 있는 밝은 느낌)
 export function playWorkComplete() {
   try {
     const ctx = new AudioContext()
@@ -34,13 +39,14 @@ export function playWorkComplete() {
     bell(ctx, 523.25, t + 0.00, 0.30, 1.3) // C5
     bell(ctx, 659.25, t + 0.20, 0.28, 1.3) // E5
     bell(ctx, 783.99, t + 0.40, 0.33, 1.6) // G5
+    // 소리가 다 끝난 뒤 AudioContext를 닫아 메모리를 해제한다
     setTimeout(() => ctx.close(), 3500)
   } catch {
-    /* Web Audio API 미지원 */
+    /* Web Audio API를 지원하지 않는 환경에서는 조용히 무시 */
   }
 }
 
-// 휴식 완료: G4 → C5 2음 신호 (집중 촉구, 더 짧고 명료)
+// 휴식 완료 시 재생 — G4→C5 2음 신호 (집중 복귀를 촉구하는 간결한 느낌)
 export function playBreakComplete() {
   try {
     const ctx = new AudioContext()
@@ -49,6 +55,6 @@ export function playBreakComplete() {
     bell(ctx, 523.25, t + 0.24, 0.30, 1.1) // C5
     setTimeout(() => ctx.close(), 2500)
   } catch {
-    /* Web Audio API 미지원 */
+    /* Web Audio API를 지원하지 않는 환경에서는 조용히 무시 */
   }
 }

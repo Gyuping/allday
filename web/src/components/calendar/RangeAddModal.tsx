@@ -5,15 +5,10 @@ import { X, Check, CalendarDays } from 'lucide-react'
 import { useCalendarStore } from '@/store/calendarStore'
 import { getDateRange, formatDateLabel } from '@/lib/date'
 import { CATEGORIES } from '@/lib/categories'
-
-const PRESET_COLORS = [
-  '#ef4444', '#f97316', '#f59e0b', '#eab308',
-  '#84cc16', '#22c55e', '#10b981', '#14b8a6',
-  '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
-  '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
-  '#fca5a5', '#fdba74', '#86efac', '#67e8f9',
-  '#b91c1c', '#15803d', '#1d4ed8', '#7c3aed',
-]
+import ColorPicker from './ColorPicker'
+import { PRESET_COLORS } from '@/lib/colors'
+import { REMINDER_OPTIONS } from '@/constants/reminders'
+import { useNotificationPermission } from '@/hooks/useNotificationPermission'
 
 type Props = {
   startDate: string
@@ -26,10 +21,11 @@ export default function RangeAddModal({ startDate, endDate, onClose }: Props) {
   const [title, setTitle] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
-  const [color, setColor] = useState(PRESET_COLORS[0]) // red 기본
+  const [color, setColor] = useState<string>(PRESET_COLORS[0])
   const [reminder, setReminder] = useState<number | undefined>(undefined)
   const [category, setCategory] = useState<string | undefined>(undefined)
 
+  const { request: requestNotification } = useNotificationPermission()
   const dates = getDateRange(startDate, endDate)
   const isSameDay = dates.length === 1
   const rangeLabel = isSameDay
@@ -139,24 +135,16 @@ export default function RangeAddModal({ startDate, endDate, onClose }: Props) {
             <div>
               <label className="text-xs text-neutral-400 mb-1.5 block">미리 알림</label>
               <div className="flex gap-1.5 flex-wrap">
-                {([
-                  { label: '없음', value: undefined },
-                  { label: '10분 전', value: 10 },
-                  { label: '30분 전', value: 30 },
-                  { label: '1시간 전', value: 60 },
-                  { label: '하루 전', value: 1440 },
-                ] as const).map((opt) => (
+                {REMINDER_OPTIONS.map((opt) => (
                   <button
                     key={opt.label}
                     type="button"
                     onClick={async () => {
-                      setReminder(opt.value as number | undefined)
-                      if (opt.value !== undefined && 'Notification' in window && Notification.permission === 'default') {
-                        await Notification.requestPermission()
-                      }
+                      setReminder(opt.value)
+                      if (opt.value !== undefined) await requestNotification()
                     }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      reminder === (opt.value as number | undefined)
+                      reminder === opt.value
                         ? 'bg-white text-neutral-900'
                         : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'
                     }`}
@@ -171,21 +159,7 @@ export default function RangeAddModal({ startDate, endDate, onClose }: Props) {
             </div>
 
             <div>
-              <label className="text-xs text-neutral-400 mb-2 block">색상</label>
-              <div className="grid grid-cols-8 gap-2">
-                {PRESET_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setColor(c)}
-                    className="w-7 h-7 rounded-full transition-transform hover:scale-110 focus:outline-none"
-                    style={{
-                      backgroundColor: c,
-                      boxShadow: color === c ? `0 0 0 2px #171717, 0 0 0 4px ${c}` : 'none',
-                    }}
-                  />
-                ))}
-              </div>
+              <ColorPicker value={color} onChange={setColor} />
             </div>
 
             <div className="flex gap-3 mt-1">

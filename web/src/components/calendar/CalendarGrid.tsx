@@ -1,10 +1,17 @@
 'use client'
 
+// 월간 캘린더 그리드 컴포넌트
+// - 날짜 셀 클릭: 해당 날 일정 목록 열기
+// - 이벤트 드래그앤드롭: 날짜 이동
+// - 범위 드래그(빈 셀): 여러 날 일정 추가 모달 열기
+// 데스크톱/모바일에서 다른 레이아웃으로 표시된다.
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { toDateStr, todayStr, getDateRange } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
+const MAX_EVENTS_DESKTOP = 3  // 데스크톱 셀에 표시할 최대 이벤트 수
+const MAX_EVENTS_MOBILE  = 4  // 모바일 셀에 표시할 최대 이벤트 수
 
 type Props = {
   year: number
@@ -37,7 +44,8 @@ export default function CalendarGrid({
     return new Set(getDateRange(selStart, selCurrent))
   }, [selStart, selCurrent])
 
-  // 마우스를 그리드 밖에서 놓아도 처리
+  // 마우스를 그리드 밖에서 놓아도 범위 선택/클릭 처리가 되도록 window에 등록
+  // selStart === selCurrent이고 드래그가 없으면 단순 클릭으로 판단한다.
   useEffect(() => {
     const onMouseUp = () => {
       if (!isSelecting.current) return
@@ -57,7 +65,8 @@ export default function CalendarGrid({
     return () => window.removeEventListener('mouseup', onMouseUp)
   }, [selStart, selCurrent, onDayClick, onRangeSelect])
 
-  // ── 달력 셀 계산 ──
+  // 해당 월의 첫 번째 날 요일과 총 날짜 수를 계산해 셀 배열을 만든다.
+  // 첫 주 앞에 빈 셀(null)을 채워 요일이 맞도록 정렬한다.
   const firstDayOfWeek = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
@@ -67,15 +76,19 @@ export default function CalendarGrid({
   ]
   while (cells.length % 7 !== 0) cells.push(null)
 
-  // 여러 날 일정은 범위 내 모든 날짜에 포함
-  const eventsByDate = events.reduce<Record<string, CalendarEvent[]>>((acc, e) => {
-    const dates = e.endDate ? getDateRange(e.date, e.endDate) : [e.date]
-    dates.forEach((d) => {
-      if (!acc[d]) acc[d] = []
-      acc[d].push(e)
-    })
-    return acc
-  }, {})
+  // 날짜별로 이벤트를 그룹화 — 여러 날 일정은 범위 내 모든 날짜에 포함된다.
+  // 렌더링마다 재계산하지 않도록 useMemo로 메모이제이션.
+  const eventsByDate = useMemo(() =>
+    events.reduce<Record<string, CalendarEvent[]>>((acc, e) => {
+      const dates = e.endDate ? getDateRange(e.date, e.endDate) : [e.date]
+      dates.forEach((d) => {
+        if (!acc[d]) acc[d] = []
+        acc[d].push(e)
+      })
+      return acc
+    }, {}),
+    [events]
+  )
 
   return (
     <div className="flex flex-col flex-1 select-none">
@@ -183,7 +196,7 @@ export default function CalendarGrid({
               </div>
 
               <div className="flex flex-col gap-0.5">
-                {dayEvents.slice(0, 3).map((ev) => {
+                {dayEvents.slice(0, MAX_EVENTS_DESKTOP).map((ev) => {
                   const isMulti = !!ev.endDate
                   // 이 셀이 이벤트 바의 시작/끝인지 판단 (주 경계도 시작/끝으로 처리)
                   const isSegStart = !isMulti || ev.date === dateStr || colIdx === 0
@@ -247,7 +260,7 @@ export default function CalendarGrid({
 
                 {dayEvents.length > 0 && (
                   <div className="flex md:hidden gap-0.5 px-0.5 mt-0.5 flex-wrap">
-                    {dayEvents.slice(0, 4).map((ev) => (
+                    {dayEvents.slice(0, MAX_EVENTS_MOBILE).map((ev) => (
                       <div
                         key={ev.id}
                         onMouseDown={(e) => e.stopPropagation()}

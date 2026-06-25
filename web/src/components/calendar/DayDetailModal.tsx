@@ -1,20 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { X, Plus, ChevronRight, ChevronLeft, Trash2, Check, Bell } from 'lucide-react'
 import { useCalendarStore } from '@/store/calendarStore'
-import { formatDateLabel } from '@/lib/date'
+import { useTodoStore } from '@/store/todoStore'
+import { formatDateLabel, parseDateStr, getEventsForDate } from '@/lib/date'
 import { CATEGORIES, getCategoryById } from '@/lib/categories'
 import type { CalendarEvent } from '@/types'
-
-const PRESET_COLORS = [
-  '#ef4444', '#f97316', '#f59e0b', '#eab308',
-  '#84cc16', '#22c55e', '#10b981', '#14b8a6',
-  '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
-  '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
-  '#fca5a5', '#fdba74', '#86efac', '#67e8f9',
-  '#b91c1c', '#15803d', '#1d4ed8', '#7c3aed',
-]
+import ColorPicker from './ColorPicker'
+import { REMINDER_OPTIONS } from '@/constants/reminders'
+import { useNotificationPermission } from '@/hooks/useNotificationPermission'
+import CheckIcon from '@/components/ui/CheckIcon'
 
 type View = 'list' | 'add' | { type: 'edit'; event: CalendarEvent }
 
@@ -23,17 +19,10 @@ type Props = {
   holidayName?: string
   initialEvent?: CalendarEvent
   startAdd?: boolean
+  startTime?: string
+  endTime?: string
   onClose: () => void
 }
-
-// ── 공통 일정 폼 ────────────────────────────────────────────────────
-const REMINDER_OPTIONS = [
-  { label: '없음', value: undefined },
-  { label: '10분 전', value: 10 },
-  { label: '30분 전', value: 30 },
-  { label: '1시간 전', value: 60 },
-  { label: '하루 전', value: 1440 },
-] as const
 
 function EventForm({
   initialTitle = '',
@@ -60,6 +49,7 @@ function EventForm({
   onCancel: () => void
   onDelete?: () => void
 }) {
+  const { request: requestNotification } = useNotificationPermission()
   const [title, setTitle] = useState(initialTitle)
   const [date, setDate] = useState(initialDate)
   const [startTime, setStartTime] = useState(initialStartTime)
@@ -67,12 +57,13 @@ function EventForm({
   const [color, setColor] = useState(initialColor)
   const [reminder, setReminder] = useState<number | undefined>(initialReminder)
   const [category, setCategory] = useState<string | undefined>(initialCategory)
+  const [titleError, setTitleError] = useState(false)
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault()
-        if (!title.trim()) return
+        if (!title.trim()) { setTitleError(true); return }
         onSubmit({ title: title.trim(), date, startTime, endTime, color, reminder, category })
       }}
       className="flex flex-col gap-4"
@@ -83,10 +74,13 @@ function EventForm({
           autoFocus
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => { setTitle(e.target.value); setTitleError(false) }}
           placeholder="일정 제목을 입력하세요"
-          className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-neutral-500 outline-none focus:border-neutral-500 transition-colors"
+          className={`w-full bg-neutral-800 border rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-neutral-500 outline-none transition-colors ${
+            titleError ? 'border-red-500 focus:border-red-400' : 'border-neutral-700 focus:border-neutral-500'
+          }`}
         />
+        {titleError && <p className="text-xs text-red-400 mt-1">제목을 입력해주세요.</p>}
       </div>
 
       <div>
@@ -149,13 +143,11 @@ function EventForm({
               key={opt.label}
               type="button"
               onClick={async () => {
-                setReminder(opt.value as number | undefined)
-                if (opt.value !== undefined && 'Notification' in window && Notification.permission === 'default') {
-                  await Notification.requestPermission()
-                }
+                setReminder(opt.value)
+                if (opt.value !== undefined) await requestNotification()
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                reminder === (opt.value as number | undefined)
+                reminder === opt.value
                   ? 'bg-white text-neutral-900'
                   : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'
               }`}
@@ -170,21 +162,7 @@ function EventForm({
       </div>
 
       <div>
-        <label className="text-xs text-neutral-400 mb-2 block">색상</label>
-        <div className="grid grid-cols-8 gap-2">
-          {PRESET_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setColor(c)}
-              className="w-7 h-7 rounded-full transition-transform hover:scale-110 focus:outline-none"
-              style={{
-                backgroundColor: c,
-                boxShadow: color === c ? `0 0 0 2px #171717, 0 0 0 4px ${c}` : 'none',
-              }}
-            />
-          ))}
-        </div>
+        <ColorPicker value={color} onChange={setColor} />
       </div>
 
       <div className="flex gap-2 mt-1">
@@ -218,8 +196,13 @@ function EventForm({
 }
 
 // ── 메인 컴포넌트 ────────────────────────────────────────────────────
-export default function DayDetailModal({ date, holidayName, initialEvent, startAdd, onClose }: Props) {
+export default function DayDetailModal({ date, holidayName, initialEvent, startAdd, startTime, endTime, onClose }: Props) {
   const { events, addEvent, updateEvent, deleteEvent } = useCalendarStore()
+  const todos = useTodoStore((s) => s.todos)
+  const completedTodos = useMemo(
+    () => todos.filter((t) => t.completedAt === date),
+    [todos, date]
+  )
 
   const [view, setView] = useState<View>(
     initialEvent ? { type: 'edit', event: initialEvent }
@@ -228,20 +211,18 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
   )
   const [confirmAll, setConfirmAll] = useState(false)
 
-  const [year, month, day] = date.split('-').map(Number)
+  const { year, month, day } = parseDateStr(date)
   const weekday = ['일', '월', '화', '수', '목', '금', '토'][new Date(year, month - 1, day).getDay()]
   const dateLabel = `${month}월 ${day}일 (${weekday})`
 
   // 여러 날 일정도 해당 날짜가 범위 안에 있으면 포함
-  const dayEvents = events
-    .filter((e) => {
-      if (e.endDate) return e.date <= date && date <= e.endDate
-      return e.date === date
-    })
-    .sort((a, b) => {
+  const dayEvents = useMemo(() =>
+    getEventsForDate(events, date).sort((a, b) => {
       if (!!a.endDate !== !!b.endDate) return a.endDate ? -1 : 1
       return (a.startTime ?? '').localeCompare(b.startTime ?? '')
-    })
+    }),
+    [events, date]
+  )
 
   const headerTitle =
     view === 'list' ? dateLabel
@@ -330,6 +311,30 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
                 </ul>
               )}
 
+              {/* 완료한 할일 */}
+              {completedTodos.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex-1 h-px bg-neutral-800" />
+                    <span className="text-xs text-neutral-600 shrink-0">완료한 할일 {completedTodos.length}개</span>
+                    <div className="flex-1 h-px bg-neutral-800" />
+                  </div>
+                  <ul className="flex flex-col gap-1">
+                    {completedTodos.map((todo) => (
+                      <li key={todo.id} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-neutral-800/50">
+                        <div className="w-4 h-4 rounded-full bg-emerald-500 shrink-0 flex items-center justify-center">
+                          <CheckIcon size={8} />
+                        </div>
+                        <span className="text-sm text-neutral-500 line-through truncate">{todo.title}</span>
+                        {todo.tags?.map((tag) => (
+                          <span key={tag} className="text-[10px] bg-neutral-800 text-neutral-600 px-1.5 py-0.5 rounded shrink-0">#{tag}</span>
+                        ))}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setView('add')}
@@ -375,6 +380,8 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
           {view === 'add' && (
             <EventForm
               initialDate={date}
+              initialStartTime={startTime}
+              initialEndTime={endTime}
               submitLabel="추가"
               onSubmit={(data) => {
                 addEvent({

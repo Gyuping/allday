@@ -4,15 +4,8 @@ import { useState } from 'react'
 import { X, Trash2, Pencil, Check } from 'lucide-react'
 import { useCalendarStore } from '@/store/calendarStore'
 import type { CalendarEvent } from '@/types'
-
-const PRESET_COLORS = [
-  '#ef4444', '#f97316', '#f59e0b', '#eab308',
-  '#84cc16', '#22c55e', '#10b981', '#14b8a6',
-  '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
-  '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
-  '#fca5a5', '#fdba74', '#86efac', '#67e8f9',
-  '#b91c1c', '#15803d', '#1d4ed8', '#7c3aed',
-]
+import ColorPicker from './ColorPicker'
+import { parseDateStr } from '@/lib/date'
 
 type Props = {
   event: CalendarEvent
@@ -29,8 +22,8 @@ export default function EventDetailModal({ event, onClose }: Props) {
   const [endTime, setEndTime] = useState(event.endTime ?? '')
   const [color, setColor] = useState(event.color ?? '#6366f1')
 
-  const [year, month, day] = event.date.split('-')
-  const dateLabel = `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`
+  const { year, month, day } = parseDateStr(event.date)
+  const dateLabel = `${year}년 ${month}월 ${day}일`
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
@@ -124,21 +117,7 @@ export default function EventDetailModal({ event, onClose }: Props) {
             </div>
 
             <div>
-              <label className="text-xs text-neutral-400 mb-2 block">색상</label>
-              <div className="grid grid-cols-8 gap-2">
-                {PRESET_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setColor(c)}
-                    className="w-7 h-7 rounded-full transition-transform hover:scale-110 focus:outline-none"
-                    style={{
-                      backgroundColor: c,
-                      boxShadow: color === c ? `0 0 0 2px #171717, 0 0 0 4px ${c}` : 'none',
-                    }}
-                  />
-                ))}
-              </div>
+              <ColorPicker value={color} onChange={setColor} />
             </div>
 
             <div className="flex gap-3 mt-1">

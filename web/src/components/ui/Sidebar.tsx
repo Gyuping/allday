@@ -1,21 +1,16 @@
 'use client'
 
+// 데스크톱 전용 좌측 사이드바 네비게이션 (md 이상에서만 표시)
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, CalendarDays, CheckSquare, Timer } from 'lucide-react'
-
-const NAV_ITEMS = [
-  { label: '대시보드', href: '/', icon: LayoutDashboard },
-  { label: '캘린더', href: '/calendar', icon: CalendarDays },
-  { label: 'To-Do', href: '/todo', icon: CheckSquare },
-  { label: '타이머', href: '/pomodoro', icon: Timer },
-]
+import { NAV_ITEMS } from '@/constants/navigation'
 
 export default function Sidebar() {
   const pathname = usePathname()
 
   return (
     <aside className="hidden md:flex flex-col w-60 min-h-screen bg-neutral-900 text-white border-r border-neutral-800 shrink-0">
+      {/* 로고 영역 */}
       <div className="px-6 py-6 border-b border-neutral-800">
         <span
           className="text-2xl tracking-[-0.03em] select-none"
@@ -30,6 +25,7 @@ export default function Sidebar() {
 
       <nav className="flex flex-col gap-1 p-3 mt-2">
         {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+          // href가 '/'이면 정확히 일치해야 활성 상태 (캘린더가 '/'를 포함하지 않도록)
           const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
           return (
             <Link

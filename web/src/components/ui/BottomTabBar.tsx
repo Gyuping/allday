@@ -1,22 +1,17 @@
 'use client'
 
+// 모바일 전용 하단 탭바 (md 미만에서만 표시)
+// Sidebar와 NAV_ITEMS를 공유하며 mobileLabel(짧은 이름)을 사용한다.
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, CalendarDays, CheckSquare, Timer } from 'lucide-react'
-
-const NAV_ITEMS = [
-  { label: '홈', href: '/', icon: LayoutDashboard },
-  { label: '캘린더', href: '/calendar', icon: CalendarDays },
-  { label: 'To-Do', href: '/todo', icon: CheckSquare },
-  { label: '타이머', href: '/pomodoro', icon: Timer },
-]
+import { NAV_ITEMS } from '@/constants/navigation'
 
 export default function BottomTabBar() {
   const pathname = usePathname()
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-neutral-900 border-t border-neutral-800 flex">
-      {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+      {NAV_ITEMS.map(({ mobileLabel, href, icon: Icon }) => {
         const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
         return (
           <Link
@@ -27,7 +22,7 @@ export default function BottomTabBar() {
             }`}
           >
             <Icon size={22} />
-            <span>{label}</span>
+            <span>{mobileLabel}</span>
           </Link>
         )
       })}
