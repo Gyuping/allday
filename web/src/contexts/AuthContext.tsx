@@ -1,0 +1,58 @@
+'use client'
+
+// 로그인 상태를 앱 전체에 공유하는 컨텍스트
+// useAuth() 훅으로 어디서든 현재 유저 정보를 가져올 수 있다.
+import { createContext, useContext, useEffect, useState } from 'react'
+import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider, User } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
+
+type AuthContextType = {
+  user: User | null       // 로그인한 유저 (null이면 비로그인)
+  loading: boolean        // 로그인 상태 확인 중
+  signInWithGoogle: () => Promise<void>
+  logout: () => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextType | null>(null)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Firebase가 로그인 상태를 자동으로 감지해서 알려준다
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u)
+      setLoading(false)
+    })
+    return unsubscribe
+  }, [])
+
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider()
+    try {
+      await signInWithPopup(auth, provider)
+    } catch (e: any) {
+      // 팝업 중복 요청 or 사용자가 직접 닫은 경우 → 무시
+      if (e?.code === 'auth/cancelled-popup-request' || e?.code === 'auth/popup-closed-by-user') return
+      throw e
+    }
+  }
+
+  const logout = async () => {
+    await signOut(auth)
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+// 컴포넌트에서 로그인 정보를 쓸 때 이 훅을 호출한다
+export function useAuth() {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+  return ctx
+}

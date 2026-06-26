@@ -1,34 +1,43 @@
-// 캘린더 일정 데이터를 전역으로 관리하는 Zustand 스토어
-// persist 미들웨어를 통해 localStorage에 자동 저장/복원된다.
+// 캘린더 이벤트 전역 상태 관리
+// Firestore 연동 시 addCalendarEvent 등을 직접 호출한다.
+// userId는 Providers에서 주입해 실시간 구독을 설정한다.
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import type { CalendarEvent } from '@/types'
+import {
+  addCalendarEvent,
+  updateCalendarEvent,
+  deleteCalendarEvent,
+} from '@/lib/firestore/calendar'
 
 type CalendarStore = {
   events: CalendarEvent[]
-  addEvent: (event: CalendarEvent) => void
-  updateEvent: (id: string, event: Partial<CalendarEvent>) => void
-  deleteEvent: (id: string) => void
+  userId: string | null
+  setUserId: (id: string | null) => void
+  setEvents: (events: CalendarEvent[]) => void
+  addEvent: (event: CalendarEvent) => Promise<void>
+  updateEvent: (id: string, event: Partial<CalendarEvent>) => Promise<void>
+  deleteEvent: (id: string) => Promise<void>
 }
 
-export const useCalendarStore = create<CalendarStore>()(
-  persist(
-    (set) => ({
-      events: [],
+export const useCalendarStore = create<CalendarStore>((set, get) => ({
+  events: [],
+  userId: null,
 
-      // 새 일정 추가 — id는 호출 측에서 crypto.randomUUID()로 생성해서 넘긴다
-      addEvent: (event) =>
-        set((s) => ({ events: [...s.events, event] })),
+  setUserId: (id) => set({ userId: id }),
+  setEvents: (events) => set({ events }),
 
-      // 특정 일정의 일부 필드만 수정 (Partial로 필요한 필드만 전달)
-      updateEvent: (id, updated) =>
-        set((s) => ({
-          events: s.events.map((e) => (e.id === id ? { ...e, ...updated } : e)),
-        })),
+  addEvent: async (event) => {
+    const { userId } = get()
+    if (userId) await addCalendarEvent(userId, event)
+  },
 
-      deleteEvent: (id) =>
-        set((s) => ({ events: s.events.filter((e) => e.id !== id) })),
-    }),
-    { name: 'allay-calendar' }  // localStorage 키 이름
-  )
-)
+  updateEvent: async (id, data) => {
+    const { userId } = get()
+    if (userId) await updateCalendarEvent(userId, id, data)
+  },
+
+  deleteEvent: async (id) => {
+    const { userId } = get()
+    if (userId) await deleteCalendarEvent(userId, id)
+  },
+}))

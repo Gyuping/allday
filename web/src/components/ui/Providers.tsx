@@ -1,21 +1,48 @@
 'use client'
 
-// 앱 전체에 걸쳐 한 번만 실행해야 하는 전역 사이드이펙트를 모아둔 컴포넌트
-// layout.tsx에서 최상위에 감싸져 있어 앱이 켜질 때 딱 한 번 마운트된다.
+// 앱 전체 전역 사이드이펙트 — 로그인 시 Firestore 실시간 구독 시작
 import { useEffect } from 'react'
-import { useEventReminders } from '@/hooks/useEventReminders'
+import { useAuth } from '@/contexts/AuthContext'
+import { useCalendarStore } from '@/store/calendarStore'
 import { useTodoStore } from '@/store/todoStore'
+import { subscribeCalendar } from '@/lib/firestore/calendar'
+import { subscribeTodos } from '@/lib/firestore/todos'
+import { useEventReminders } from '@/hooks/useEventReminders'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  // 30초마다 일정 알림 시간을 체크 (훅 내부에서 interval 설정)
   useEventReminders()
 
-  const resetExpiredCompleted = useTodoStore((s) => s.resetExpiredCompleted)
+  const { user } = useAuth()
+  const { setUserId: setCalendarUserId, setEvents } = useCalendarStore()
+  const { setUserId: setTodoUserId, setTodos, resetExpiredCompleted } = useTodoStore()
 
-  // 앱이 처음 켜질 때 하루 지난 완료 항목을 미완료로 되돌린다.
   useEffect(() => {
+    if (!user) {
+      // 로그아웃 시 로컬 데이터 초기화
+      setCalendarUserId(null)
+      setTodoUserId(null)
+      setEvents([])
+      setTodos([])
+      return
+    }
+
+    // 로그인 시 userId 설정 + Firestore 실시간 구독 시작
+    setCalendarUserId(user.uid)
+    setTodoUserId(user.uid)
+
+    const unsubCalendar = subscribeCalendar(user.uid, setEvents)
+    const unsubTodos    = subscribeTodos(user.uid, (todos) => {
+      setTodos(todos)
+    })
+
+    // 앱 시작 시 하루 지난 완료 항목 초기화
     resetExpiredCompleted()
-  }, [resetExpiredCompleted])
+
+    return () => {
+      unsubCalendar()
+      unsubTodos()
+    }
+  }, [user])
 
   return <>{children}</>
 }
