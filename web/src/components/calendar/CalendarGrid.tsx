@@ -18,14 +18,15 @@ type Props = {
   month: number
   events: CalendarEvent[]
   holidays: Record<string, string>
-  onDayClick: (dateStr: string) => void
+  onDayClick: (dateStr: string) => void        // 단일 클릭 → 일간 뷰 이동
+  onDayDoubleClick: (dateStr: string) => void  // 더블클릭 → 일정 추가 모달
   onEventClick: (event: CalendarEvent) => void
   onEventDrop: (eventId: string, newDate: string) => void
   onRangeSelect: (startDate: string, endDate: string) => void
 }
 
 export default function CalendarGrid({
-  year, month, events, holidays, onDayClick, onEventClick, onEventDrop, onRangeSelect,
+  year, month, events, holidays, onDayClick, onDayDoubleClick, onEventClick, onEventDrop, onRangeSelect,
 }: Props) {
   const today = todayStr()
 
@@ -44,6 +45,9 @@ export default function CalendarGrid({
     return new Set(getDateRange(selStart, selCurrent))
   }, [selStart, selCurrent])
 
+  // 단일 클릭과 더블클릭을 구분하기 위한 타이머
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // 마우스를 그리드 밖에서 놓아도 범위 선택/클릭 처리가 되도록 window에 등록
   // selStart === selCurrent이고 드래그가 없으면 단순 클릭으로 판단한다.
   useEffect(() => {
@@ -51,7 +55,18 @@ export default function CalendarGrid({
       if (!isSelecting.current) return
       if (selStart && selCurrent) {
         if (selStart === selCurrent && !didDrag.current) {
-          onDayClick(selStart)
+          // 250ms 안에 더블클릭이 오면 타이머를 취소하고 더블클릭 처리
+          // 오지 않으면 단일 클릭으로 처리
+          if (clickTimer.current) {
+            clearTimeout(clickTimer.current)
+            clickTimer.current = null
+            onDayDoubleClick(selStart)
+          } else {
+            clickTimer.current = setTimeout(() => {
+              clickTimer.current = null
+              onDayClick(selStart)
+            }, 130)
+          }
         } else {
           onRangeSelect(selStart, selCurrent)
         }
@@ -63,7 +78,7 @@ export default function CalendarGrid({
     }
     window.addEventListener('mouseup', onMouseUp)
     return () => window.removeEventListener('mouseup', onMouseUp)
-  }, [selStart, selCurrent, onDayClick, onRangeSelect])
+  }, [selStart, selCurrent, onDayClick, onDayDoubleClick, onRangeSelect])
 
   // 해당 월의 첫 번째 날 요일과 총 날짜 수를 계산해 셀 배열을 만든다.
   // 첫 주 앞에 빈 셀(null)을 채워 요일이 맞도록 정렬한다.

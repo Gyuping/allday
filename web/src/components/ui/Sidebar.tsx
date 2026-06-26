@@ -10,17 +10,18 @@ export default function Sidebar() {
 
   return (
     <aside className="hidden md:flex flex-col w-60 min-h-screen bg-neutral-900 text-white border-r border-neutral-800 shrink-0">
-      {/* 로고 영역 */}
+      {/* 로고 영역 — 클릭 시 홈(대시보드)으로 이동 */}
       <div className="px-6 py-6 border-b border-neutral-800">
-        <span
-          className="text-2xl tracking-[-0.03em] select-none"
+        <Link
+          href="/"
+          className="text-2xl tracking-[-0.03em] select-none hover:opacity-80 transition-opacity"
           style={{ fontFamily: 'var(--font-logo)' }}
         >
           <span className="text-white">My All</span>
           <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
             ~Day
           </span>
-        </span>
+        </Link>
       </div>
 
       <nav className="flex flex-col gap-1 p-3 mt-2">
