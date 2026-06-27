@@ -8,8 +8,10 @@ import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
 import { toDateStr } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i)
+const HOURS       = Array.from({ length: 24 }, (_, i) => i)
 const HOUR_HEIGHT = 64
+// 시간 구분선 — 매 렌더링마다 재생성하지 않도록 모듈 레벨 상수로 추출
+const HOUR_LINES  = HOURS.map((h) => ({ hour: h, top: h * HOUR_HEIGHT, halfTop: h * HOUR_HEIGHT + HOUR_HEIGHT / 2 }))
 const SNAP = 15
 
 function timeToMinutes(time: string): number {
@@ -199,10 +201,10 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
             }}
           >
             {/* 시간 구분선 */}
-            {HOURS.map((h) => (
-              <div key={h}>
-                <div className="absolute left-0 right-0 border-t border-neutral-800/60" style={{ top: h * HOUR_HEIGHT }} />
-                <div className="absolute left-0 right-0 border-t border-neutral-800/30 border-dashed" style={{ top: h * HOUR_HEIGHT + HOUR_HEIGHT / 2 }} />
+            {HOUR_LINES.map(({ hour, top, halfTop }) => (
+              <div key={hour}>
+                <div className="absolute left-0 right-0 border-t border-neutral-800/60" style={{ top }} />
+                <div className="absolute left-0 right-0 border-t border-neutral-800/30 border-dashed" style={{ top: halfTop }} />
               </div>
             ))}
 

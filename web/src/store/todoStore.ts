@@ -8,12 +8,15 @@ import {
   deleteTodo as fsDelete,
   clearAllTodos as fsClear,
 } from '@/lib/firestore/todos'
+import { toast } from '@/store/toastStore'
 
 type TodoStore = {
   todos: Todo[]
   userId: string | null
+  isLoading: boolean
   setUserId: (id: string | null) => void
   setTodos: (todos: Todo[]) => void
+  setLoading: (v: boolean) => void
   addTodo: (todo: Todo) => Promise<void>
   updateTodo: (id: string, data: Partial<Todo>) => Promise<void>
   toggleTodo: (id: string) => Promise<void>
@@ -25,9 +28,11 @@ type TodoStore = {
 export const useTodoStore = create<TodoStore>((set, get) => ({
   todos: [],
   userId: null,
+  isLoading: true,
 
   setUserId: (id) => set({ userId: id }),
-  setTodos: (todos) => set({ todos }),
+  setTodos: (todos) => set({ todos, isLoading: false }),
+  setLoading: (v) => set({ isLoading: v }),
 
   addTodo: async (todo) => {
     const { userId } = get()
@@ -37,6 +42,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsAdd(userId, todo)
     } catch {
       set((s) => ({ todos: s.todos.filter((t) => t.id !== todo.id) }))
+      toast.error('할일 저장에 실패했어요.')
     }
   },
 
@@ -50,6 +56,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsUpdate(userId, id, data)
     } catch {
       set((s) => ({ todos: s.todos.map((t) => t.id === id ? prev : t) }))
+      toast.error('할일 수정에 실패했어요.')
     }
   },
 
@@ -58,15 +65,14 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
     if (!userId) return
     const todo = todos.find((t) => t.id === id)
     if (!todo) return
-    const completed  = !todo.completed
+    const completed   = !todo.completed
     const completedAt = completed ? new Date().toLocaleDateString('sv-SE') : undefined
-    // 낙관적 업데이트
     set((s) => ({ todos: s.todos.map((t) => t.id === id ? { ...t, completed, completedAt } : t) }))
     try {
       await fsUpdate(userId, id, { completed, completedAt: completedAt ?? null } as Partial<Todo>)
     } catch {
-      // 롤백
       set((s) => ({ todos: s.todos.map((t) => t.id === id ? todo : t) }))
+      toast.error('상태 변경에 실패했어요.')
     }
   },
 
@@ -79,6 +85,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsDelete(userId, id)
     } catch {
       if (prev) set((s) => ({ todos: [...s.todos, prev] }))
+      toast.error('할일 삭제에 실패했어요.')
     }
   },
 

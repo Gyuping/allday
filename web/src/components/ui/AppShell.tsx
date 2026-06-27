@@ -6,11 +6,11 @@ import LoginScreen from './LoginScreen'
 import Providers from './Providers'
 import Sidebar from './Sidebar'
 import BottomTabBar from './BottomTabBar'
+import ToastContainer from './Toast'
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
 
-  // 로그인 상태 확인 중 — 빈 화면 (깜빡임 방지)
   if (loading) {
     return (
       <div className="flex w-full min-h-screen items-center justify-center bg-neutral-950">
@@ -19,10 +19,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // 비로그인 상태 — 로그인 화면
   if (!user) return <LoginScreen />
 
-  // 로그인 상태 — 앱 본체
   return (
     <Providers>
       <Sidebar />
@@ -30,6 +28,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <BottomTabBar />
+      {/* 전역 토스트 — 항상 최상단에 표시 */}
+      <ToastContainer />
     </Providers>
   )
 }

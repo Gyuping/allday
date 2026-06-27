@@ -102,9 +102,9 @@ export default function PomodoroPage() {
     if (isRunning) return
     setTimeDraft(`${mins}:${secs}`)
     setEditingTime(true)
-    setTimeout(() => {
-      timeInputRef.current?.select()
-    }, 0)
+    // 다음 렌더링 후 포커스 — ref로 클린업
+    const tid = setTimeout(() => { timeInputRef.current?.select() }, 0)
+    return () => clearTimeout(tid)
   }
 
   function commitTime() {
@@ -217,7 +217,7 @@ export default function PomodoroPage() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   phase === p ? 'bg-white/10 text-white border border-white/10' : 'text-neutral-500 hover:text-neutral-300'
                 }`}>
-                {PHASE_LABEL[phase === p ? p : p]}
+                {PHASE_LABEL[p]}
               </button>
             ))}
           </div>

@@ -11,6 +11,7 @@ import RangeAddModal from '@/components/calendar/RangeAddModal'
 import MonthPicker from '@/components/calendar/MonthPicker'
 import { useCalendarStore } from '@/store/calendarStore'
 import { useTodoStore } from '@/store/todoStore'
+import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { useHolidays } from '@/hooks/useHolidays'
 import { toDateStr } from '@/lib/date'
 import { CATEGORIES } from '@/lib/categories'
@@ -40,7 +41,7 @@ export default function CalendarPage() {
   const [rangeModal, setRangeModal] = useState<{ start: string; end: string } | null>(null)
   const [showPicker, setShowPicker] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
-  const { events, updateEvent } = useCalendarStore()
+  const { events, updateEvent, isLoading } = useCalendarStore()
   const todos = useTodoStore((s) => s.todos)
   const holidays = useHolidays(viewYear)
 
@@ -117,6 +118,8 @@ export default function CalendarPage() {
     setViewDay(new Date(y, m - 1, d))
     setViewMode('day')
   }
+
+  if (isLoading) return <LoadingSpinner message="캘린더 불러오는 중..." />
 
   return (
     <div className="flex flex-col h-screen p-4 md:p-6 gap-4">

@@ -12,8 +12,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   useEventReminders()
 
   const { user } = useAuth()
-  const { setUserId: setCalendarUserId, setEvents } = useCalendarStore()
-  const { setUserId: setTodoUserId, setTodos, resetExpiredCompleted } = useTodoStore()
+  const { setUserId: setCalendarUserId, setEvents, setLoading: setCalendarLoading } = useCalendarStore()
+  const { setUserId: setTodoUserId, setTodos, setLoading: setTodoLoading, resetExpiredCompleted } = useTodoStore()
   const midnightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -24,6 +24,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       setTodoUserId(null)
       setEvents([])
       setTodos([])
+      setCalendarLoading(false)
+      setTodoLoading(false)
       return
     }
 

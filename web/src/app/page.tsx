@@ -120,7 +120,7 @@ export default function DashboardPage() {
               <div
                 key={todo.id}
                 className="group flex items-center gap-3 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 px-4 py-3 transition-colors cursor-pointer"
-                onClick={() => toggleTodo(todo.id)}
+                onClick={() => { toggleTodo(todo.id).catch(() => {}) }}
               >
                 <div className="w-5 h-5 rounded-full border-2 border-neutral-600 group-hover:border-emerald-500 flex items-center justify-center transition-colors shrink-0">
                   <CheckCircle2 size={12} className="text-neutral-700 group-hover:text-emerald-500 transition-colors" />
@@ -156,7 +156,7 @@ export default function DashboardPage() {
               <div
                 key={todo.id}
                 className="group flex items-center gap-3 rounded-xl bg-neutral-900/60 border border-neutral-800/60 px-4 py-3 opacity-60 hover:opacity-80 transition-opacity cursor-pointer"
-                onClick={() => toggleTodo(todo.id)}
+                onClick={() => { toggleTodo(todo.id).catch(() => {}) }}
               >
                 <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
                   <CheckIcon />
