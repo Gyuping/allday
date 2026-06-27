@@ -36,12 +36,13 @@ export default function TodoPage() {
 
   const allTags = useMemo(() => {
     const set = new Set<string>()
-    todos.forEach((t) => t.tags?.forEach((tag) => set.add(tag)))
+    todos.filter((t) => !t.archived).forEach((t) => t.tags?.forEach((tag) => set.add(tag)))
     return [...set]
   }, [todos])
 
   const filtered = useMemo(() => {
     let list = todos.filter((t) => {
+      if (t.archived) return false
       if (filter === 'active')    return !t.completed
       if (filter === 'completed') return t.completed
       return true
@@ -65,8 +66,8 @@ export default function TodoPage() {
     return [...active, ...completed]
   }, [todos, filter, sort, tagFilter])
 
-  const activeCount    = todos.filter((t) => !t.completed).length
-  const completedCount = todos.filter((t) =>  t.completed).length
+  const activeCount    = todos.filter((t) => !t.archived && !t.completed).length
+  const completedCount = todos.filter((t) => !t.archived &&  t.completed).length
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
@@ -78,7 +79,7 @@ export default function TodoPage() {
             {activeCount}개 진행중 · {completedCount}개 완료
           </p>
         </div>
-        {todos.length > 0 && (
+        {todos.some((t) => !t.archived) && (
           <div className="flex items-center gap-2">
             {confirmClear ? (
               <>
@@ -89,7 +90,7 @@ export default function TodoPage() {
                   취소
                 </button>
                 <button
-                  onClick={() => { clearAll(); setConfirmClear(false) }}
+                  onClick={async () => { await clearAll(); setConfirmClear(false) }}
                   className="px-3 py-2 rounded-xl text-sm bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
                 >
                   전체 삭제
@@ -170,7 +171,7 @@ export default function TodoPage() {
       {/* 목록 */}
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-neutral-600">
-          {todos.length === 0 ? (
+          {!todos.some((t) => !t.archived) ? (
             <div className="flex flex-col items-center gap-4">
               <p className="text-4xl">✅</p>
               <p className="text-sm">아직 할일이 없어요.</p>
@@ -191,8 +192,8 @@ export default function TodoPage() {
             <TodoItem
               key={todo.id}
               todo={todo}
-              onToggle={() => toggleTodo(todo.id)}
-              onDelete={() => deleteTodo(todo.id)}
+              onToggle={async () => { await toggleTodo(todo.id) }}
+              onDelete={async () => { await deleteTodo(todo.id) }}
               onEdit={() => setEditTodo(todo)}
             />
           ))}
@@ -210,8 +211,8 @@ export default function TodoPage() {
                 <TodoItem
                   key={todo.id}
                   todo={todo}
-                  onToggle={() => toggleTodo(todo.id)}
-                  onDelete={() => deleteTodo(todo.id)}
+                  onToggle={async () => { await toggleTodo(todo.id) }}
+                  onDelete={async () => { await deleteTodo(todo.id) }}
                   onEdit={() => setEditTodo(todo)}
                 />
               ))}
@@ -224,7 +225,7 @@ export default function TodoPage() {
       {editTodo && (
         <EditTodoModal
           todo={editTodo}
-          onSave={(updated) => updateTodo(editTodo.id, updated)}
+          onSave={async (updated) => { await updateTodo(editTodo.id, updated) }}
           onClose={() => setEditTodo(null)}
         />
       )}

@@ -10,6 +10,7 @@ import DayDetailModal from '@/components/calendar/DayDetailModal'
 import RangeAddModal from '@/components/calendar/RangeAddModal'
 import MonthPicker from '@/components/calendar/MonthPicker'
 import { useCalendarStore } from '@/store/calendarStore'
+import { useTodoStore } from '@/store/todoStore'
 import { useHolidays } from '@/hooks/useHolidays'
 import { toDateStr } from '@/lib/date'
 import { CATEGORIES } from '@/lib/categories'
@@ -40,7 +41,15 @@ export default function CalendarPage() {
   const [showPicker, setShowPicker] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const { events, updateEvent } = useCalendarStore()
+  const todos = useTodoStore((s) => s.todos)
   const holidays = useHolidays(viewYear)
+
+  // 완료 이력이 있는 날짜 집합 (현재 완료 상태와 무관하게 completedAt 기준)
+  const completedTodoDates = useMemo(() => {
+    const set = new Set<string>()
+    todos.forEach((t) => { if (t.completedAt) set.add(t.completedAt) })
+    return set
+  }, [todos])
 
   // 월 이동
   const prevMonth = () => {
@@ -198,7 +207,8 @@ export default function CalendarPage() {
           year={viewYear} month={viewMonth}
           events={filteredEvents}
           holidays={holidays}
-          onDayClick={(date) => setDayModal({ date, startAdd: true })}
+          completedTodoDates={completedTodoDates}
+          onDayClick={(date) => setDayModal({ date })}
           onDayDoubleClick={handleDayClick}
           onEventClick={(ev) => setDayModal({ date: ev.date })}
           onEventDrop={(eventId, newDate) => updateEvent(eventId, { date: newDate })}

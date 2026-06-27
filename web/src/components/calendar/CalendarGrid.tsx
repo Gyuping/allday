@@ -18,15 +18,16 @@ type Props = {
   month: number
   events: CalendarEvent[]
   holidays: Record<string, string>
-  onDayClick: (dateStr: string) => void        // 단일 클릭 → 일간 뷰 이동
-  onDayDoubleClick: (dateStr: string) => void  // 더블클릭 → 일정 추가 모달
+  completedTodoDates?: Set<string>
+  onDayClick: (dateStr: string) => void
+  onDayDoubleClick: (dateStr: string) => void
   onEventClick: (event: CalendarEvent) => void
   onEventDrop: (eventId: string, newDate: string) => void
   onRangeSelect: (startDate: string, endDate: string) => void
 }
 
 export default function CalendarGrid({
-  year, month, events, holidays, onDayClick, onDayDoubleClick, onEventClick, onEventDrop, onRangeSelect,
+  year, month, events, holidays, completedTodoDates, onDayClick, onDayDoubleClick, onEventClick, onEventDrop, onRangeSelect,
 }: Props) {
   const today = todayStr()
 
@@ -45,9 +46,6 @@ export default function CalendarGrid({
     return new Set(getDateRange(selStart, selCurrent))
   }, [selStart, selCurrent])
 
-  // 단일 클릭과 더블클릭을 구분하기 위한 타이머
-  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
   // 마우스를 그리드 밖에서 놓아도 범위 선택/클릭 처리가 되도록 window에 등록
   // selStart === selCurrent이고 드래그가 없으면 단순 클릭으로 판단한다.
   useEffect(() => {
@@ -55,18 +53,7 @@ export default function CalendarGrid({
       if (!isSelecting.current) return
       if (selStart && selCurrent) {
         if (selStart === selCurrent && !didDrag.current) {
-          // 250ms 안에 더블클릭이 오면 타이머를 취소하고 더블클릭 처리
-          // 오지 않으면 단일 클릭으로 처리
-          if (clickTimer.current) {
-            clearTimeout(clickTimer.current)
-            clickTimer.current = null
-            onDayDoubleClick(selStart)
-          } else {
-            clickTimer.current = setTimeout(() => {
-              clickTimer.current = null
-              onDayClick(selStart)
-            }, 130)
-          }
+          onDayClick(selStart)
         } else {
           onRangeSelect(selStart, selCurrent)
         }
@@ -196,18 +183,25 @@ export default function CalendarGrid({
                     </span>
                   )}
                 </div>
-                {/* 날짜 숫자 */}
-                <span
-                  className={`shrink-0 text-sm w-7 h-7 md:text-base md:w-8 md:h-8 flex items-center justify-center rounded-full font-semibold transition-colors ${
-                    isToday
-                      ? 'bg-white text-neutral-900'
-                      : isHolidayColor
-                      ? 'text-rose-400 group-hover:text-rose-300'
-                      : 'text-neutral-400 group-hover:text-white'
-                  }`}
-                >
-                  {day}
-                </span>
+                {/* 날짜 숫자 — 클릭하면 일 뷰로 이동 */}
+                <div className="flex items-center gap-1 shrink-0">
+                  {completedTodoDates?.has(dateStr) && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80" />
+                  )}
+                  <span
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); onDayDoubleClick(dateStr) }}
+                    className={`text-sm w-7 h-7 md:text-base md:w-8 md:h-8 flex items-center justify-center rounded-full font-semibold transition-colors cursor-pointer hover:ring-2 hover:ring-white/30 ${
+                      isToday
+                        ? 'bg-white text-neutral-900'
+                        : isHolidayColor
+                        ? 'text-rose-400 group-hover:text-rose-300'
+                        : 'text-neutral-400 group-hover:text-white'
+                    }`}
+                  >
+                    {day}
+                  </span>
+                </div>
               </div>
 
               <div className="flex flex-col gap-0.5">

@@ -28,16 +28,21 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
 
   addEvent: async (event) => {
     const { userId } = get()
-    if (userId) await addCalendarEvent(userId, event)
+    set((s) => ({ events: [...s.events, event] }))
+    if (userId) addCalendarEvent(userId, event).catch(() => {
+      set((s) => ({ events: s.events.filter((e) => e.id !== event.id) }))
+    })
   },
 
   updateEvent: async (id, data) => {
     const { userId } = get()
     if (userId) await updateCalendarEvent(userId, id, data)
+    else set((s) => ({ events: s.events.map((e) => e.id === id ? { ...e, ...data } : e) }))
   },
 
   deleteEvent: async (id) => {
     const { userId } = get()
     if (userId) await deleteCalendarEvent(userId, id)
+    else set((s) => ({ events: s.events.filter((e) => e.id !== id) }))
   },
 }))

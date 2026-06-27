@@ -38,8 +38,8 @@ export default function EventDetailModal({ event, onClose }: Props) {
     setIsEditing(false)
   }
 
-  const handleDelete = () => {
-    deleteEvent(event.id)
+  const handleDelete = async () => {
+    await deleteEvent(event.id)
     onClose()
   }
 

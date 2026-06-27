@@ -30,43 +30,52 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
 
   addTodo: async (todo) => {
     const { userId } = get()
-    if (userId) await fsAdd(userId, todo)
+    set((s) => ({ todos: [todo, ...s.todos] }))
+    if (userId) fsAdd(userId, todo).catch(() => {
+      set((s) => ({ todos: s.todos.filter((t) => t.id !== todo.id) }))
+    })
   },
 
   updateTodo: async (id, data) => {
     const { userId } = get()
+    set((s) => ({ todos: s.todos.map((t) => t.id === id ? { ...t, ...data } : t) }))
     if (userId) await fsUpdate(userId, id, data)
   },
 
   toggleTodo: async (id) => {
     const { todos, userId } = get()
     const todo = todos.find((t) => t.id === id)
-    if (!todo || !userId) return
+    if (!todo) return
     const completed = !todo.completed
-    await fsUpdate(userId, id, {
-      completed,
-      completedAt: completed ? new Date().toLocaleDateString('sv-SE') : undefined,
-    })
+    const completedAt = completed ? new Date().toLocaleDateString('sv-SE') : undefined
+    set((s) => ({ todos: s.todos.map((t) => t.id === id ? { ...t, completed, completedAt } : t) }))
+    if (!userId) return
+    await fsUpdate(userId, id, { completed, completedAt: completedAt ?? null } as Partial<Todo>)
   },
 
   deleteTodo: async (id) => {
     const { userId } = get()
-    if (userId) await fsDelete(userId, id)
+    set((s) => ({ todos: s.todos.filter((t) => t.id !== id) }))
+    if (userId) fsDelete(userId, id).catch(() => {})
   },
 
   clearAll: async () => {
     const { todos, userId } = get()
-    if (userId) await fsClear(userId, todos.map((t) => t.id))
+    const ids = todos.filter((t) => !t.archived).map((t) => t.id)
+    set((s) => ({ todos: s.todos.filter((t) => t.archived) }))
+    if (userId) fsClear(userId, ids).catch(() => {})
   },
 
-  // 하루 지난 완료 항목을 미완료로 초기화 (completedAt 유지)
+  // 날짜가 바뀌면 완료 항목을 archived 처리 — To-Do 목록에서 숨기고 캘린더 점은 유지
   resetExpiredCompleted: async () => {
     const { todos, userId } = get()
-    if (!userId) return
     const today = new Date().toLocaleDateString('sv-SE')
-    const expired = todos.filter(
-      (t) => t.completed && t.completedAt && t.completedAt < today
+    const expiredIds = new Set(
+      todos.filter((t) => t.completed && t.completedAt && t.completedAt < today).map((t) => t.id)
     )
-    await Promise.all(expired.map((t) => fsUpdate(userId, t.id, { completed: false })))
+    if (expiredIds.size === 0) return
+    set((s) => ({ todos: s.todos.map((t) => expiredIds.has(t.id) ? { ...t, archived: true } : t) }))
+    if (!userId) return
+    await Promise.all([...expiredIds].map((id) => fsUpdate(userId, id, { archived: true })))
   },
 }))

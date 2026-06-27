@@ -17,11 +17,14 @@ export function subscribeTodos(userId: string, callback: (todos: Todo[]) => void
   })
 }
 
+const clean = (obj: object) =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined))
+
 export const addTodo    = (userId: string, todo: Todo) =>
-  setDoc(ref(userId, todo.id), todo)
+  setDoc(ref(userId, todo.id), clean(todo))
 
 export const updateTodo = (userId: string, id: string, data: Partial<Todo>) =>
-  updateDoc(ref(userId, id), data as Record<string, unknown>)
+  updateDoc(ref(userId, id), clean(data) as Record<string, unknown>)
 
 export const deleteTodo = (userId: string, id: string) =>
   deleteDoc(ref(userId, id))

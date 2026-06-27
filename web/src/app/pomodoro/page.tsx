@@ -333,8 +333,8 @@ export default function PomodoroPage() {
               <div className="bg-white/5 border border-white/5 rounded-2xl p-4">
                 <p className="text-3xl font-bold text-white tabular-nums">
                   {Math.floor(sessionCount * settings.workMinutes / 60) > 0
-                    ? `${Math.floor(sessionCount * settings.workMinutes / 60)}h ${sessionCount * settings.workMinutes % 60}m`
-                    : `${sessionCount * settings.workMinutes}m`}
+                    ? `${Math.floor(sessionCount * settings.workMinutes / 60)}시간 ${sessionCount * settings.workMinutes % 60}분`
+                    : `${sessionCount * settings.workMinutes}분`}
                 </p>
                 <p className="text-xs text-neutral-600 mt-1">총 집중 시간</p>
               </div>

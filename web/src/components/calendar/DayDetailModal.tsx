@@ -353,8 +353,8 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
                         취소
                       </button>
                       <button
-                        onClick={() => {
-                          dayEvents.forEach((ev) => deleteEvent(ev.id))
+                        onClick={async () => {
+                          await Promise.all(dayEvents.map((ev) => deleteEvent(ev.id)))
                           setConfirmAll(false)
                         }}
                         className="px-3 py-2.5 rounded-xl text-sm font-medium bg-rose-500 text-white hover:bg-rose-600 transition-colors whitespace-nowrap"
@@ -383,8 +383,8 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
               initialStartTime={startTime}
               initialEndTime={endTime}
               submitLabel="추가"
-              onSubmit={(data) => {
-                addEvent({
+              onSubmit={async (data) => {
+                await addEvent({
                   id: crypto.randomUUID(),
                   title: data.title,
                   date: data.date,
@@ -411,8 +411,8 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
               initialReminder={view.event.reminder}
               initialCategory={view.event.category}
               submitLabel="저장"
-              onSubmit={(data) => {
-                updateEvent(view.event.id, {
+              onSubmit={async (data) => {
+                await updateEvent(view.event.id, {
                   title: data.title,
                   date: data.date,
                   startTime: data.startTime || undefined,
@@ -424,8 +424,8 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
                 setView('list')
               }}
               onCancel={() => setView('list')}
-              onDelete={() => {
-                deleteEvent(view.event.id)
+              onDelete={async () => {
+                await deleteEvent(view.event.id)
                 setView('list')
               }}
             />

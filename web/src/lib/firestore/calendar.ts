@@ -18,11 +18,14 @@ export function subscribeCalendar(userId: string, callback: (events: CalendarEve
   })
 }
 
+const clean = (obj: object) =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined))
+
 export const addCalendarEvent    = (userId: string, event: CalendarEvent) =>
-  setDoc(ref(userId, event.id), event)
+  setDoc(ref(userId, event.id), clean(event))
 
 export const updateCalendarEvent = (userId: string, id: string, data: Partial<CalendarEvent>) =>
-  updateDoc(ref(userId, id), data as Record<string, unknown>)
+  updateDoc(ref(userId, id), clean(data) as Record<string, unknown>)
 
 export const deleteCalendarEvent = (userId: string, id: string) =>
   deleteDoc(ref(userId, id))

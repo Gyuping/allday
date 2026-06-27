@@ -21,10 +21,10 @@ export default function AddTodoModal({ onClose }: Props) {
 
   useEffect(() => { titleRef.current?.focus() }, [])
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    addTodo({
+    await addTodo({
       id: crypto.randomUUID(),
       title: title.trim(),
       completed: false,

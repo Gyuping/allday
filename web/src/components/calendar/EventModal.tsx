@@ -22,14 +22,14 @@ export default function EventModal({ date, onClose }: Props) {
   const [color, setColor] = useState<string>(PRESET_COLORS[0])
   const [titleError, setTitleError] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) { setTitleError(true); return }
-    addEvent({
+    await addEvent({
       id: crypto.randomUUID(),
       title: title.trim(),
       date: eventDate,
-      startTime: startTime || undefined,  // 빈 문자열은 undefined로 저장 (종일 일정 처리)
+      startTime: startTime || undefined,
       endTime: endTime || undefined,
       color,
     })

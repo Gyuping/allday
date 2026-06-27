@@ -1,7 +1,7 @@
 'use client'
 
 // 앱 전체 전역 사이드이펙트 — 로그인 시 Firestore 실시간 구독 시작
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCalendarStore } from '@/store/calendarStore'
 import { useTodoStore } from '@/store/todoStore'
@@ -38,9 +38,19 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     // 앱 시작 시 하루 지난 완료 항목 초기화
     resetExpiredCompleted()
 
+    // 자정이 지나면 자동으로 완료 항목 초기화
+    const scheduleReset = () => {
+      const now = new Date()
+      const msUntilMidnight =
+        new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()
+      return setTimeout(() => { resetExpiredCompleted(); scheduleReset() }, msUntilMidnight)
+    }
+    const timer = scheduleReset()
+
     return () => {
       unsubCalendar()
       unsubTodos()
+      clearTimeout(timer)
     }
   }, [user])
 

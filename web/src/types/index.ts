@@ -33,6 +33,7 @@ export type Todo = {
   dueDate?: string      // 마감일 (YYYY-MM-DD)
   createdAt: string     // 생성일시 (ISO 문자열)
   completedAt?: string  // 완료한 날짜 (YYYY-MM-DD) — 캘린더에 기록용
+  archived?: boolean    // true면 To-Do 목록에서 숨김 (캘린더 점은 유지)
   tags?: string[]       // 소문자 태그 목록
 }
 

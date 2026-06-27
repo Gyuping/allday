@@ -4,7 +4,7 @@
 // - 마우스/터치 드래그로 시작~끝 시간을 선택해 일정 추가 가능
 // - 15분 단위 스냅으로 정렬됨
 // - 종일 이벤트(startTime 없음)는 상단 별도 영역에 표시
-import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import { useMemo, useRef, useState, useCallback, useEffect, Fragment } from 'react'
 import { toDateStr } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
 
@@ -220,22 +220,20 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
           {/* 시간 레이블 */}
           <div className="w-14 shrink-0 relative select-none">
             {HOURS.map((h) => (
-              <>
+              <Fragment key={h}>
                 <div
-                  key={`${h}:00`}
                   className="absolute right-2 text-[10px] text-neutral-500 -translate-y-2"
                   style={{ top: h * HOUR_HEIGHT }}
                 >
                   {h === 0 ? '' : `${String(h).padStart(2, '0')}:00`}
                 </div>
                 <div
-                  key={`${h}:30`}
                   className="absolute right-2 text-[9px] text-neutral-700 -translate-y-2"
                   style={{ top: h * HOUR_HEIGHT + HOUR_HEIGHT / 2 }}
                 >
                   {`${String(h).padStart(2, '0')}:30`}
                 </div>
-              </>
+              </Fragment>
             ))}
           </div>
 

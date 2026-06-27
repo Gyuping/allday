@@ -3,7 +3,7 @@
 // 로그인 상태를 앱 전체에 공유하는 컨텍스트
 // useAuth() 훅으로 어디서든 현재 유저 정보를 가져올 수 있다.
 import { createContext, useContext, useEffect, useState } from 'react'
-import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider, User } from 'firebase/auth'
+import { onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, GoogleAuthProvider, User } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 
 type AuthContextType = {
@@ -33,8 +33,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await signInWithPopup(auth, provider)
     } catch (e: any) {
-      // 팝업 중복 요청 or 사용자가 직접 닫은 경우 → 무시
       if (e?.code === 'auth/cancelled-popup-request' || e?.code === 'auth/popup-closed-by-user') return
+      // 팝업 차단 시 리다이렉트 방식으로 전환
+      if (e?.code === 'auth/popup-blocked') {
+        await signInWithRedirect(auth, provider)
+        return
+      }
       throw e
     }
   }
