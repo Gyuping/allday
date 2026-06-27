@@ -63,19 +63,16 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
     return () => clearInterval(id)
   }, [])
 
-  // 이 날짜의 이벤트 분류
-  const timedEvents = useMemo(() =>
-    events.filter((e) =>
-      (e.endDate ? e.date <= dateStr && dateStr <= e.endDate : e.date === dateStr) && !!e.startTime
-    ),
-    [events, dateStr]
-  )
-  const allDayEvents = useMemo(() =>
-    events.filter((e) =>
-      (e.endDate ? e.date <= dateStr && dateStr <= e.endDate : e.date === dateStr) && !e.startTime
-    ),
-    [events, dateStr]
-  )
+  // 이 날짜의 이벤트 — 한 번만 필터링해서 timed/allDay로 분리
+  const { timedEvents, allDayEvents } = useMemo(() => {
+    const inRange = events.filter((e) =>
+      e.endDate ? e.date <= dateStr && dateStr <= e.endDate : e.date === dateStr
+    )
+    return {
+      timedEvents:  inRange.filter((e) => !!e.startTime),
+      allDayEvents: inRange.filter((e) => !e.startTime),
+    }
+  }, [events, dateStr])
 
   // 드래그 상태
   const colRef = useRef<HTMLDivElement>(null)
@@ -87,12 +84,6 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
     const rect = colRef.current.getBoundingClientRect()
     return pxToMinutes(Math.max(0, clientY - rect.top))
   }, [])
-
-  const startDrag = useCallback((clientY: number) => {
-    const startMin = yToMinutes(clientY)
-    drag.current = { startMin, currentMin: startMin + SNAP }
-    setDragPreview({ startMin, currentMin: startMin + SNAP })
-  }, [yToMinutes])
 
   const finishDrag = useCallback(() => {
     if (!drag.current) return
@@ -107,23 +98,17 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
   }, [dateStr, onSlotClick])
 
   useEffect(() => {
-    const onMove = (clientY: number) => {
-      if (!drag.current) return
-      drag.current.currentMin = yToMinutes(clientY)
+    const onPointerMove = (e: PointerEvent) => {
+      if (!e.isPrimary || !drag.current) return
+      drag.current.currentMin = yToMinutes(e.clientY)
       setDragPreview({ ...drag.current })
     }
-    const onMouseMove = (e: MouseEvent) => onMove(e.clientY)
-    const onTouchMove = (e: TouchEvent) => { e.preventDefault(); onMove(e.touches[0].clientY) }
 
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', finishDrag)
-    window.addEventListener('touchmove', onTouchMove, { passive: false })
-    window.addEventListener('touchend', finishDrag)
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup', finishDrag)
     return () => {
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', finishDrag)
-      window.removeEventListener('touchmove', onTouchMove)
-      window.removeEventListener('touchend', finishDrag)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', finishDrag)
     }
   }, [yToMinutes, finishDrag])
 
@@ -203,8 +188,15 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
             ref={colRef}
             className="flex-1 border-l border-neutral-800 relative select-none"
             style={{ cursor: drag.current ? 'ns-resize' : 'crosshair' }}
-            onMouseDown={(e) => { if ((e.target as HTMLElement).closest('[data-event]')) return; e.preventDefault(); startDrag(e.clientY) }}
-            onTouchStart={(e) => { if ((e.target as HTMLElement).closest('[data-event]')) return; startDrag(e.touches[0].clientY) }}
+            onPointerDown={(e) => {
+              if (!e.isPrimary) return
+              if ((e.target as HTMLElement).closest('[data-event]')) return
+              e.preventDefault()
+              ;(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
+              const startMin = yToMinutes(e.clientY)
+              drag.current = { startMin, currentMin: startMin + SNAP }
+              setDragPreview({ startMin, currentMin: startMin + SNAP })
+            }}
           >
             {/* 시간 구분선 */}
             {HOURS.map((h) => (
@@ -245,7 +237,8 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
 
             {/* 이벤트 */}
             {timedEvents.map((ev) => {
-              const startMin = timeToMinutes(ev.startTime!)
+              if (!ev.startTime) return null
+              const startMin = timeToMinutes(ev.startTime)
               const rawEnd   = ev.endTime ? timeToMinutes(ev.endTime) : NaN
               const endMin   = isNaN(rawEnd) || rawEnd <= startMin ? startMin + 60 : rawEnd
               const top      = minutesToPx(startMin)

@@ -26,12 +26,17 @@ export function todayStr(): string {
 export function getDateRange(start: string, end: string): string[] {
   const s = new Date(start)
   const e = new Date(end)
+  if (isNaN(s.getTime()) || isNaN(e.getTime())) return []
   const [from, to] = s <= e ? [s, e] : [e, s]
   const dates: string[] = []
+  // getTime() 비교로 부동소수점 오차 방지, 최대 365일 제한으로 무한루프 방어
+  const limit = 365
+  let count = 0
   const d = new Date(from)
-  while (d <= to) {
+  while (d.getTime() <= to.getTime() && count < limit) {
     dates.push(toDateStr(d.getFullYear(), d.getMonth(), d.getDate()))
     d.setDate(d.getDate() + 1)
+    count++
   }
   return dates
 }

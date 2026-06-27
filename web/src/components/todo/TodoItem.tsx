@@ -20,7 +20,8 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: Props) {
   const p = PRIORITY_CONFIG[todo.priority]
 
   // 마감일이 오늘보다 이전이면 기한 초과 (완료된 항목은 표시 안 함)
-  const isOverdue = !todo.completed && todo.dueDate && todo.dueDate < new Date().toISOString().slice(0, 10)
+  // toLocaleDateString('sv-SE') — 시스템 타임존 기준 YYYY-MM-DD (toISOString은 UTC라 자정 근처 오차 발생)
+  const isOverdue = !todo.completed && todo.dueDate && todo.dueDate < new Date().toLocaleDateString('sv-SE')
 
   return (
     <div

@@ -24,3 +24,30 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+  스크롤바 스타일 — Windows/Linux 전용
+  @media (hover: hover) and (pointer: fine) 조건으로
+  마우스가 있는 환경에만 적용 → Mac 트랙패드에는 적용 안 됨
+*/
+@media (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(115, 115, 115, 0.4);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(115, 115, 115, 0.6);
+  }
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(115, 115, 115, 0.4) transparent;
+  }
+}

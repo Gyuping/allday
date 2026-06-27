@@ -8,11 +8,17 @@ import Providers from '@/components/ui/Providers'
 import { AuthProvider } from '@/contexts/AuthContext'
 import AppShell from '@/components/ui/AppShell'
 
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
+// fallback: 폰트 로드 실패 시(Windows 네트워크 오류 등) 시스템 폰트로 대체
+const geist = Geist({
+  subsets: ['latin'],
+  variable: '--font-geist',
+  fallback: ['system-ui', 'Arial', 'sans-serif'],
+})
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-logo',
-  weight: ['700'],
+  weight: ['400', '600', '700'],  // 다양한 굵기 — Mac/Windows 렌더링 차이 완화
+  fallback: ['Segoe UI', 'system-ui', 'sans-serif'],
 })
 
 export const metadata: Metadata = {

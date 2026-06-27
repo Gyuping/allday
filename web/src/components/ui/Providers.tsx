@@ -1,6 +1,5 @@
 'use client'
 
-// 앱 전체 전역 사이드이펙트 — 로그인 시 Firestore 실시간 구독 시작
 import { useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCalendarStore } from '@/store/calendarStore'
@@ -15,10 +14,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const { setUserId: setCalendarUserId, setEvents } = useCalendarStore()
   const { setUserId: setTodoUserId, setTodos, resetExpiredCompleted } = useTodoStore()
+  const midnightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
+    if (midnightTimer.current) clearTimeout(midnightTimer.current)
+
     if (!user) {
-      // 로그아웃 시 로컬 데이터 초기화
       setCalendarUserId(null)
       setTodoUserId(null)
       setEvents([])
@@ -26,31 +27,31 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // 로그인 시 userId 설정 + Firestore 실시간 구독 시작
     setCalendarUserId(user.uid)
     setTodoUserId(user.uid)
 
     const unsubCalendar = subscribeCalendar(user.uid, setEvents)
-    const unsubTodos    = subscribeTodos(user.uid, (todos) => {
-      setTodos(todos)
-    })
+    const unsubTodos    = subscribeTodos(user.uid, setTodos)
 
-    // 앱 시작 시 하루 지난 완료 항목 초기화
-    resetExpiredCompleted()
+    // async 함수 호출 시 에러 무시 처리
+    resetExpiredCompleted().catch(() => {})
 
-    // 자정이 지나면 자동으로 완료 항목 초기화
-    const scheduleReset = () => {
+    const scheduleMidnightReset = () => {
       const now = new Date()
       const msUntilMidnight =
         new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()
-      return setTimeout(() => { resetExpiredCompleted(); scheduleReset() }, msUntilMidnight)
+      midnightTimer.current = setTimeout(() => {
+        resetExpiredCompleted().catch(() => {})
+        scheduleMidnightReset()
+      }, msUntilMidnight)
     }
-    const timer = scheduleReset()
+    scheduleMidnightReset()
 
     return () => {
-      unsubCalendar()
-      unsubTodos()
-      clearTimeout(timer)
+      // 각각 try-catch로 감싸 하나가 실패해도 나머지가 실행되도록 보장
+      try { unsubCalendar() } catch { /* 무시 */ }
+      try { unsubTodos() }    catch { /* 무시 */ }
+      if (midnightTimer.current) clearTimeout(midnightTimer.current)
     }
   }, [user])
 

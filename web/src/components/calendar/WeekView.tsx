@@ -95,25 +95,19 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
     return pxToMinutes(y)
   }, [])
 
-  const startDrag = useCallback((dateStr: string, colIdx: number, clientY: number) => {
+  // PointerEvent로 통합 — Mac 트랙패드/Windows 마우스/터치스크린 모두 처리
+  const handlePointerDown = useCallback((dateStr: string, colIdx: number, e: React.PointerEvent) => {
+    if (!e.isPrimary) return  // 멀티터치 무시
+    if ((e.target as HTMLElement).closest('[data-event]')) return
+    e.preventDefault()
+    // setPointerCapture: 드래그 중 포인터가 요소 밖으로 나가도 이벤트 유지 (Mac/Windows 공통)
+    ;(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
     const colEl = colRefs.current[colIdx]
     if (!colEl) return
-    const startMin = yToMinutes(colEl, clientY)
+    const startMin = yToMinutes(colEl, e.clientY)
     drag.current = { date: dateStr, startMin, currentMin: startMin + SNAP }
     setDragPreview({ date: dateStr, startMin, currentMin: startMin + SNAP })
   }, [yToMinutes])
-
-  const handleMouseDown = useCallback((dateStr: string, colIdx: number, e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('[data-event]')) return
-    e.preventDefault()
-    startDrag(dateStr, colIdx, e.clientY)
-  }, [startDrag])
-
-  const handleTouchStart = useCallback((dateStr: string, colIdx: number, e: React.TouchEvent) => {
-    if ((e.target as HTMLElement).closest('[data-event]')) return
-    const touch = e.touches[0]
-    startDrag(dateStr, colIdx, touch.clientY)
-  }, [startDrag])
 
   const finishDrag = useCallback(() => {
     if (!drag.current) return
@@ -128,8 +122,8 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
   }, [onSlotClick])
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!drag.current) return
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!e.isPrimary || !drag.current) return
       const colIdx = dateStrs.indexOf(drag.current.date)
       const colEl = colRefs.current[colIdx]
       if (!colEl) return
@@ -137,25 +131,11 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
       setDragPreview({ ...drag.current })
     }
 
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!drag.current) return
-      e.preventDefault()
-      const colIdx = dateStrs.indexOf(drag.current.date)
-      const colEl = colRefs.current[colIdx]
-      if (!colEl) return
-      drag.current.currentMin = yToMinutes(colEl, e.touches[0].clientY)
-      setDragPreview({ ...drag.current })
-    }
-
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', finishDrag)
-    window.addEventListener('touchmove', handleTouchMove, { passive: false })
-    window.addEventListener('touchend', finishDrag)
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', finishDrag)
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', finishDrag)
-      window.removeEventListener('touchmove', handleTouchMove)
-      window.removeEventListener('touchend', finishDrag)
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', finishDrag)
     }
   }, [dateStrs, yToMinutes, finishDrag])
 
@@ -254,8 +234,7 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
                 ref={(el) => { colRefs.current[colIdx] = el }}
                 className="flex-1 border-l border-neutral-800 relative select-none"
                 style={{ cursor: drag.current ? 'ns-resize' : 'crosshair' }}
-                onMouseDown={(e) => handleMouseDown(dateStr, colIdx, e)}
-                onTouchStart={(e) => handleTouchStart(dateStr, colIdx, e)}
+                onPointerDown={(e) => handlePointerDown(dateStr, colIdx, e)}
               >
                 {/* 시간 구분선 */}
                 {HOURS.map((h) => (
@@ -285,7 +264,8 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
 
                 {/* 이벤트 */}
                 {timedEvents.map((ev) => {
-                  const startMin = timeToMinutes(ev.startTime!)
+                  if (!ev.startTime) return null
+                  const startMin = timeToMinutes(ev.startTime)
                   const rawEnd   = ev.endTime ? timeToMinutes(ev.endTime) : NaN
                   const endMin   = isNaN(rawEnd) || rawEnd <= startMin ? startMin + 60 : rawEnd
                   const top      = minutesToPx(startMin)

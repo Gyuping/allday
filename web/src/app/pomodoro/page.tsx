@@ -112,10 +112,12 @@ export default function PomodoroPage() {
     let totalSecs = 0
 
     if (/^\d+$/.test(raw)) {
-      totalSecs = Math.min(parseInt(raw), 99) * 60
+      const mins = parseInt(raw, 10)
+      totalSecs = Math.max(0, Math.min(mins, 99)) * 60  // 음수·초과 방지
     } else if (/^\d{1,2}:\d{2}$/.test(raw)) {
       const [m, s] = raw.split(':').map(Number)
-      totalSecs = Math.min(m, 99) * 60 + Math.min(s, 59)
+      // 분·초 각각 범위 클램프
+      totalSecs = Math.max(0, Math.min(m, 99)) * 60 + Math.max(0, Math.min(s, 59))
     } else {
       setEditingTime(false)
       return
@@ -262,7 +264,7 @@ export default function PomodoroPage() {
                     if (e.key === 'Escape') setEditingTime(false)
                   }}
                   className="bg-transparent text-white text-center font-bold tabular-nums focus:outline-none border-b-2 border-white/30 focus:border-white/70 transition-colors"
-                  style={{ fontSize: 'clamp(48px, 12vw, 86px)', lineHeight: 1, letterSpacing: '-0.05em', width: 'min(260px, 90vw)' }}
+                  style={{ fontSize: 'clamp(48px, 10vw, 86px)', lineHeight: 1, letterSpacing: '-0.05em', width: 'min(260px, 90vw)' }}
                   placeholder="MM:SS"
                   maxLength={5}
                 />
@@ -273,7 +275,7 @@ export default function PomodoroPage() {
                   className={`font-bold tabular-nums text-white transition-opacity ${
                     !isRunning ? 'cursor-text hover:opacity-70' : 'cursor-default'
                   }`}
-                  style={{ fontSize: 'clamp(48px, 12vw, 86px)', lineHeight: 1, letterSpacing: '-0.05em' }}
+                  style={{ fontSize: 'clamp(48px, 10vw, 86px)', lineHeight: 1, letterSpacing: '-0.05em' }}
                 >
                   {mins}:{secs}
                 </div>

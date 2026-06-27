@@ -354,7 +354,8 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
                       </button>
                       <button
                         onClick={async () => {
-                          await Promise.all(dayEvents.map((ev) => deleteEvent(ev.id)))
+                          // allSettled: 일부 실패해도 나머지는 계속 삭제
+                          await Promise.allSettled(dayEvents.map((ev) => deleteEvent(ev.id)))
                           setConfirmAll(false)
                         }}
                         className="px-3 py-2.5 rounded-xl text-sm font-medium bg-rose-500 text-white hover:bg-rose-600 transition-colors whitespace-nowrap"

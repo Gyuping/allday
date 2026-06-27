@@ -1,4 +1,5 @@
 // 할일 목록 전역 상태 관리 — Firestore 연동
+// 낙관적 업데이트: 로컬 먼저 반영 → Firestore 실패 시 롤백
 import { create } from 'zustand'
 import type { Todo } from '@/types'
 import {
@@ -30,52 +31,84 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
 
   addTodo: async (todo) => {
     const { userId } = get()
+    if (!userId) return
     set((s) => ({ todos: [todo, ...s.todos] }))
-    if (userId) fsAdd(userId, todo).catch(() => {
+    try {
+      await fsAdd(userId, todo)
+    } catch {
       set((s) => ({ todos: s.todos.filter((t) => t.id !== todo.id) }))
-    })
+    }
   },
 
   updateTodo: async (id, data) => {
-    const { userId } = get()
+    const { userId, todos } = get()
+    if (!userId) return
+    const prev = todos.find((t) => t.id === id)
+    if (!prev) return
     set((s) => ({ todos: s.todos.map((t) => t.id === id ? { ...t, ...data } : t) }))
-    if (userId) await fsUpdate(userId, id, data)
+    try {
+      await fsUpdate(userId, id, data)
+    } catch {
+      set((s) => ({ todos: s.todos.map((t) => t.id === id ? prev : t) }))
+    }
   },
 
   toggleTodo: async (id) => {
     const { todos, userId } = get()
+    if (!userId) return
     const todo = todos.find((t) => t.id === id)
     if (!todo) return
-    const completed = !todo.completed
+    const completed  = !todo.completed
     const completedAt = completed ? new Date().toLocaleDateString('sv-SE') : undefined
+    // 낙관적 업데이트
     set((s) => ({ todos: s.todos.map((t) => t.id === id ? { ...t, completed, completedAt } : t) }))
-    if (!userId) return
-    await fsUpdate(userId, id, { completed, completedAt: completedAt ?? null } as Partial<Todo>)
+    try {
+      await fsUpdate(userId, id, { completed, completedAt: completedAt ?? null } as Partial<Todo>)
+    } catch {
+      // 롤백
+      set((s) => ({ todos: s.todos.map((t) => t.id === id ? todo : t) }))
+    }
   },
 
   deleteTodo: async (id) => {
-    const { userId } = get()
+    const { userId, todos } = get()
+    if (!userId) return
+    const prev = todos.find((t) => t.id === id)
     set((s) => ({ todos: s.todos.filter((t) => t.id !== id) }))
-    if (userId) fsDelete(userId, id).catch(() => {})
+    try {
+      await fsDelete(userId, id)
+    } catch {
+      if (prev) set((s) => ({ todos: [...s.todos, prev] }))
+    }
   },
 
+  // 미완료 항목만 삭제 — 완료된 항목은 캘린더 기록 보존을 위해 유지
   clearAll: async () => {
     const { todos, userId } = get()
-    const ids = todos.filter((t) => !t.archived).map((t) => t.id)
-    set((s) => ({ todos: s.todos.filter((t) => t.archived) }))
-    if (userId) fsClear(userId, ids).catch(() => {})
+    if (!userId) return
+    const toDelete  = todos.filter((t) => !t.completed)
+    const toKeep    = todos.filter((t) =>  t.completed)
+    if (toDelete.length === 0) return
+    set({ todos: toKeep })
+    try {
+      await fsClear(userId, toDelete.map((t) => t.id))
+    } catch {
+      set({ todos })  // 실패 시 원복
+    }
   },
 
-  // 날짜가 바뀌면 완료 항목을 archived 처리 — To-Do 목록에서 숨기고 캘린더 점은 유지
   resetExpiredCompleted: async () => {
     const { todos, userId } = get()
-    const today = new Date().toLocaleDateString('sv-SE')
-    const expiredIds = new Set(
-      todos.filter((t) => t.completed && t.completedAt && t.completedAt < today).map((t) => t.id)
-    )
-    if (expiredIds.size === 0) return
-    set((s) => ({ todos: s.todos.map((t) => expiredIds.has(t.id) ? { ...t, archived: true } : t) }))
     if (!userId) return
-    await Promise.all([...expiredIds].map((id) => fsUpdate(userId, id, { archived: true })))
+    const today = new Date().toLocaleDateString('sv-SE')
+    const expired = todos.filter((t) => t.completed && t.completedAt && t.completedAt < today)
+    if (expired.length === 0) return
+    const expiredIds = new Set(expired.map((t) => t.id))
+    set((s) => ({ todos: s.todos.map((t) => expiredIds.has(t.id) ? { ...t, completed: false } : t) }))
+    try {
+      await Promise.all(expired.map((t) => fsUpdate(userId, t.id, { completed: false })))
+    } catch {
+      // 실패해도 다음 앱 실행 시 재시도
+    }
   },
 }))

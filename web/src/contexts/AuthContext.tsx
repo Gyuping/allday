@@ -4,6 +4,7 @@
 // useAuth() 훅으로 어디서든 현재 유저 정보를 가져올 수 있다.
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, GoogleAuthProvider, User } from 'firebase/auth'
+import { FirebaseError } from 'firebase/app'
 import { auth } from '@/lib/firebase'
 
 type AuthContextType = {
@@ -32,10 +33,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const provider = new GoogleAuthProvider()
     try {
       await signInWithPopup(auth, provider)
-    } catch (e: any) {
-      if (e?.code === 'auth/cancelled-popup-request' || e?.code === 'auth/popup-closed-by-user') return
+    } catch (e) {
+      if (!(e instanceof FirebaseError)) throw e
+      if (e.code === 'auth/cancelled-popup-request' || e.code === 'auth/popup-closed-by-user') return
       // 팝업 차단 시 리다이렉트 방식으로 전환
-      if (e?.code === 'auth/popup-blocked') {
+      if (e.code === 'auth/popup-blocked') {
         await signInWithRedirect(auth, provider)
         return
       }
