@@ -131,7 +131,7 @@ export default function CalendarPage() {
               onClick={() => viewMode === 'month' && setShowPicker((v) => !v)}
               className={`flex items-center gap-1.5 group ${viewMode !== 'month' ? 'cursor-default' : ''}`}
             >
-              <h1 className="text-xl font-bold group-hover:text-neutral-300 transition-colors">
+              <h1 className="text-base md:text-xl font-bold group-hover:text-neutral-300 transition-colors truncate max-w-[180px] md:max-w-none">
                 {headerTitle}
               </h1>
               {viewMode === 'month' && (
@@ -214,7 +214,21 @@ export default function CalendarPage() {
           onDayClick={(date) => setDayModal({ date })}
           onDayDoubleClick={handleDayClick}
           onEventClick={(ev) => setDayModal({ date: ev.date })}
-          onEventDrop={(eventId, newDate) => updateEvent(eventId, { date: newDate })}
+          onEventDrop={(eventId, newDate) => {
+            const ev = filteredEvents.find((e) => e.id === eventId)
+            if (!ev) return
+            if (ev.endDate) {
+              // 다중 날짜 일정 — 기간 유지하면서 날짜만 이동
+              const duration = new Date(ev.endDate).getTime() - new Date(ev.date).getTime()
+              const newEndDate = new Date(new Date(newDate).getTime() + duration)
+              updateEvent(eventId, {
+                date: newDate,
+                endDate: toDateStr(newEndDate.getFullYear(), newEndDate.getMonth(), newEndDate.getDate()),
+              })
+            } else {
+              updateEvent(eventId, { date: newDate })
+            }
+          }}
           onRangeSelect={(start, end) => setRangeModal({ start, end })}
         />
       )}
@@ -259,3 +273,4 @@ export default function CalendarPage() {
     </div>
   )
 }
+ 

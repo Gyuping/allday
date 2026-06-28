@@ -1,17 +1,12 @@
 'use client'
 
-// 월간 캘린더 그리드 컴포넌트
-// - 날짜 셀 클릭: 해당 날 일정 목록 열기
-// - 이벤트 드래그앤드롭: 날짜 이동
-// - 범위 드래그(빈 셀): 여러 날 일정 추가 모달 열기
-// 데스크톱/모바일에서 다른 레이아웃으로 표시된다.
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { toDateStr, todayStr, getDateRange } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
 
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
-const MAX_EVENTS_DESKTOP = 3  // 데스크톱 셀에 표시할 최대 이벤트 수
-const MAX_EVENTS_MOBILE  = 4  // 모바일 셀에 표시할 최대 이벤트 수
+const WEEKDAYS        = ['일', '월', '화', '수', '목', '금', '토']
+const MAX_EVENTS_DESKTOP = 3
+const MAX_EVENTS_MOBILE  = 4
 
 type Props = {
   year: number
@@ -27,66 +22,145 @@ type Props = {
 }
 
 export default function CalendarGrid({
-  year, month, events, holidays, completedTodoDates, onDayClick, onDayDoubleClick, onEventClick, onEventDrop, onRangeSelect,
+  year, month, events, holidays, completedTodoDates,
+  onDayClick, onDayDoubleClick, onEventClick, onEventDrop, onRangeSelect,
 }: Props) {
   const today = todayStr()
 
-  // ── 이벤트 드래그 상태 ──
-  const [draggingId, setDraggingId] = useState<string | null>(null)
+  // ── 시각적 피드백용 state ──
+  const [draggingId,  setDraggingId]  = useState<string | null>(null)
   const [dropOverDate, setDropOverDate] = useState<string | null>(null)
 
-  // ── 날짜 범위 선택 상태 ──
-  const [selStart, setSelStart] = useState<string | null>(null)
+  // ── 드래그 핵심 로직용 ref (stale closure 없이 항상 최신값) ──
+  const drag = useRef<{ eventId: string; dropDate: string | null } | null>(null)
+
+  // ── 날짜 범위 선택용 ref / state ──
+  const [selStart,   setSelStart]   = useState<string | null>(null)
   const [selCurrent, setSelCurrent] = useState<string | null>(null)
   const isSelecting = useRef(false)
-  const didDrag = useRef(false)
+  const didDrag     = useRef(false)
+  const clickTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // 콜백 ref — useEffect 의존성 없이 항상 최신 콜백을 사용
+  const cbRef = useRef({ onDayClick, onDayDoubleClick, onEventDrop, onRangeSelect })
+  cbRef.current = { onDayClick, onDayDoubleClick, onEventDrop, onRangeSelect }
 
   const selectedSet = useMemo(() => {
     if (!selStart || !selCurrent) return new Set<string>()
     return new Set(getDateRange(selStart, selCurrent))
   }, [selStart, selCurrent])
 
-  // 마우스를 그리드 밖에서 놓아도 범위 선택/클릭 처리가 되도록 window에 등록
-  // selStart === selCurrent이고 드래그가 없으면 단순 클릭으로 판단한다.
+  // ── window 이벤트 — 마운트 시 한 번만 등록 ──
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!drag.current) return
+
+      // 모든 칩이 pointer-events:none 상태 → elementFromPoint가 셀을 반환
+      const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null
+      let node = el
+      while (node && !node.dataset?.date) node = node.parentElement as HTMLElement | null
+      const date = node?.dataset?.date ?? null
+
+      if (date !== drag.current.dropDate) {
+        drag.current.dropDate = date
+        setDropOverDate(date)
+      }
+    }
+
+    const onMouseUp = () => {
+      // ── 이벤트 드래그 완료 ──
+      if (drag.current) {
+        const { eventId, dropDate } = drag.current
+        drag.current = null
+        setDraggingId(null)
+        setDropOverDate(null)
+        if (eventId && dropDate) cbRef.current.onEventDrop(eventId, dropDate)
+        return
+      }
+
+      // ── 날짜 범위 선택 완료 ──
+      if (!isSelecting.current) return
+      const start   = selStart
+      const current = selCurrent
+      isSelecting.current = false
+      didDrag.current     = false
+      setSelStart(null)
+      setSelCurrent(null)
+
+      if (!start || !current) return
+      if (start === current && !didDrag.current) {
+        if (clickTimer.current) {
+          clearTimeout(clickTimer.current)
+          clickTimer.current = null
+          cbRef.current.onDayDoubleClick(start)
+        } else {
+          clickTimer.current = setTimeout(() => {
+            clickTimer.current = null
+            cbRef.current.onDayClick(start)
+          }, 130)
+        }
+      } else {
+        cbRef.current.onRangeSelect(start, current)
+      }
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup',   onMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup',   onMouseUp)
+    }
+  // 의존성 없음 — cbRef로 최신 콜백 참조, drag ref로 최신 상태 참조
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // selStart/selCurrent가 ref에 없으므로 mouseup에서 직접 읽지 못함
+  // 대신 이 별도 effect에서 처리 (기존 방식 유지)
   useEffect(() => {
     const onMouseUp = () => {
+      if (drag.current) return  // 이벤트 드래그는 위 effect가 처리
       if (!isSelecting.current) return
-      if (selStart && selCurrent) {
-        if (selStart === selCurrent && !didDrag.current) {
-          onDayClick(selStart)
-        } else {
-          onRangeSelect(selStart, selCurrent)
-        }
-      }
+
+      const isSingleClick = selStart === selCurrent && !didDrag.current
       isSelecting.current = false
-      didDrag.current = false
+      didDrag.current     = false
+
+      if (!selStart) { setSelStart(null); setSelCurrent(null); return }
+
+      if (isSingleClick) {
+        if (clickTimer.current) {
+          clearTimeout(clickTimer.current)
+          clickTimer.current = null
+          cbRef.current.onDayDoubleClick(selStart)
+        } else {
+          const s = selStart
+          clickTimer.current = setTimeout(() => {
+            clickTimer.current = null
+            cbRef.current.onDayClick(s)
+          }, 130)
+        }
+      } else if (selCurrent) {
+        cbRef.current.onRangeSelect(selStart, selCurrent)
+      }
       setSelStart(null)
       setSelCurrent(null)
     }
     window.addEventListener('mouseup', onMouseUp)
     return () => window.removeEventListener('mouseup', onMouseUp)
-  }, [selStart, selCurrent, onDayClick, onDayDoubleClick, onRangeSelect])
+  }, [selStart, selCurrent])
 
-  // 해당 월의 첫 번째 날 요일과 총 날짜 수를 계산해 셀 배열을 만든다.
-  // 첫 주 앞에 빈 셀(null)을 채워 요일이 맞도록 정렬한다.
   const firstDayOfWeek = new Date(year, month, 1).getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-
+  const daysInMonth    = new Date(year, month + 1, 0).getDate()
   const cells: (number | null)[] = [
     ...Array<null>(firstDayOfWeek).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ]
   while (cells.length % 7 !== 0) cells.push(null)
 
-  // 날짜별로 이벤트를 그룹화 — 여러 날 일정은 범위 내 모든 날짜에 포함된다.
-  // 렌더링마다 재계산하지 않도록 useMemo로 메모이제이션.
   const eventsByDate = useMemo(() =>
     events.reduce<Record<string, CalendarEvent[]>>((acc, e) => {
       const dates = e.endDate ? getDateRange(e.date, e.endDate) : [e.date]
-      dates.forEach((d) => {
-        if (!acc[d]) acc[d] = []
-        acc[d].push(e)
-      })
+      dates.forEach((d) => { if (!acc[d]) acc[d] = []; acc[d].push(e) })
       return acc
     }, {}),
     [events]
@@ -97,40 +171,29 @@ export default function CalendarGrid({
       {/* 요일 헤더 */}
       <div className="grid grid-cols-7 border-b border-neutral-700">
         {WEEKDAYS.map((d, i) => (
-          <div
-            key={d}
-            className={`text-center text-xs font-medium py-2.5 ${
-              i === 0 ? 'text-rose-400' : i === 6 ? 'text-sky-400' : 'text-neutral-500'
-            }`}
-          >
-            {d}
-          </div>
+          <div key={d} className={`text-center text-xs font-medium py-2.5 ${
+            i === 0 ? 'text-rose-400' : i === 6 ? 'text-sky-400' : 'text-neutral-500'
+          }`}>{d}</div>
         ))}
       </div>
 
       {/* 날짜 셀 */}
       <div className="grid grid-cols-7 border-l border-t border-neutral-700 flex-1">
         {cells.map((day, idx) => {
-          if (day === null) {
-            return (
-              <div
-                key={`empty-${idx}`}
-                className="border-r border-b border-neutral-700 min-h-20 md:min-h-24 bg-neutral-950"
-              />
-            )
-          }
+          if (day === null) return (
+            <div key={`empty-${idx}`} className="border-r border-b border-neutral-700 min-h-20 md:min-h-24 bg-neutral-950" />
+          )
 
-          const dateStr = toDateStr(year, month, day)
-          const isToday = dateStr === today
-          const isSelected = selectedSet.has(dateStr)
-          const isDropOver = dropOverDate === dateStr && !isSelecting.current
-          const colIdx = idx % 7
-          const isSun = colIdx === 0
-          const isSat = colIdx === 6
-          const holidayName = holidays[dateStr]
+          const dateStr       = toDateStr(year, month, day)
+          const isToday       = dateStr === today
+          const isSelected    = selectedSet.has(dateStr)
+          const isDropOver    = dropOverDate === dateStr
+          const colIdx        = idx % 7
+          const isSun         = colIdx === 0
+          const isSat         = colIdx === 6
+          const holidayName   = holidays[dateStr]
           const isHolidayColor = isSun || isSat || !!holidayName
 
-          // 여러 날 일정 먼저 정렬
           const dayEvents = [...(eventsByDate[dateStr] ?? [])].sort((a, b) => {
             if (!!a.endDate !== !!b.endDate) return a.endDate ? -1 : 1
             return (a.startTime ?? '').localeCompare(b.startTime ?? '')
@@ -139,43 +202,29 @@ export default function CalendarGrid({
           return (
             <div
               key={dateStr}
-              // ── 범위 선택 마우스 이벤트 ──
+              data-date={dateStr}
               onMouseDown={(e) => {
                 if (e.button !== 0) return
-                const target = e.target as HTMLElement
-                if (target.closest('[data-event-chip]')) return
+                if ((e.target as HTMLElement).closest('[data-event-chip]')) return
                 e.preventDefault()
                 isSelecting.current = true
-                didDrag.current = false
+                didDrag.current     = false
                 setSelStart(dateStr)
                 setSelCurrent(dateStr)
               }}
               onMouseEnter={() => {
+                if (drag.current) return
                 if (!isSelecting.current) return
                 if (selCurrent !== dateStr) didDrag.current = true
                 setSelCurrent(dateStr)
               }}
-              // ── 이벤트 드롭 ──
-              onDragOver={(e) => { e.preventDefault(); setDropOverDate(dateStr) }}
-              onDragLeave={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropOverDate(null)
-              }}
-              onDrop={(e) => {
-                e.preventDefault()
-                const eventId = e.dataTransfer.getData('eventId')
-                if (eventId) onEventDrop(eventId, dateStr)
-                setDropOverDate(null)
-              }}
               className={`border-r border-b border-neutral-700 min-h-20 md:min-h-24 p-1 cursor-pointer bg-neutral-900 transition-colors group relative ${
-                isSelected
-                  ? 'bg-indigo-500/20 ring-1 ring-inset ring-indigo-500/50'
-                  : isDropOver
-                  ? 'bg-neutral-700/70 ring-1 ring-inset ring-neutral-500 z-[5]'
-                  : 'hover:bg-neutral-800/60'
+                isSelected  ? 'bg-indigo-500/20 ring-1 ring-inset ring-indigo-500/50'
+                : isDropOver ? 'bg-blue-500/20 ring-2 ring-inset ring-blue-400 z-[5]'
+                : 'hover:bg-neutral-800/60'
               }`}
             >
               <div className="flex items-start justify-between p-0.5 mb-0.5 gap-1">
-                {/* 공휴일 이름 */}
                 <div className="flex-1 min-w-0 pt-0.5">
                   {holidayName && (
                     <span className="text-sm md:text-base leading-tight text-rose-400 font-medium truncate block">
@@ -183,7 +232,6 @@ export default function CalendarGrid({
                     </span>
                   )}
                 </div>
-                {/* 날짜 숫자 — 클릭하면 일 뷰로 이동 */}
                 <div className="flex items-center gap-1 shrink-0">
                   {completedTodoDates?.has(dateStr) && (
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80" />
@@ -192,63 +240,46 @@ export default function CalendarGrid({
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onDayDoubleClick(dateStr) }}
                     className={`text-sm w-7 h-7 md:text-base md:w-8 md:h-8 flex items-center justify-center rounded-full font-semibold transition-colors cursor-pointer hover:ring-2 hover:ring-white/30 ${
-                      isToday
-                        ? 'bg-white text-neutral-900'
-                        : isHolidayColor
-                        ? 'text-rose-400 group-hover:text-rose-300'
-                        : 'text-neutral-400 group-hover:text-white'
+                      isToday ? 'bg-white text-neutral-900'
+                      : isHolidayColor ? 'text-rose-400 group-hover:text-rose-300'
+                      : 'text-neutral-400 group-hover:text-white'
                     }`}
-                  >
-                    {day}
-                  </span>
+                  >{day}</span>
                 </div>
               </div>
 
               <div className="flex flex-col gap-0.5">
                 {dayEvents.slice(0, MAX_EVENTS_DESKTOP).map((ev) => {
-                  const isMulti = !!ev.endDate
-                  // 이 셀이 이벤트 바의 시작/끝인지 판단 (주 경계도 시작/끝으로 처리)
+                  const isMulti    = !!ev.endDate
                   const isSegStart = !isMulti || ev.date === dateStr || colIdx === 0
-                  const isSegEnd = !isMulti || ev.endDate === dateStr || colIdx === 6
-
-                  // 셀 위치에 따른 바 모양 클래스
-                  // -mr/ml-[5px]: 패딩(4px) + border(1px) = 5px 을 상쇄해서 border 위까지 덮음
-                  let barClasses: string
-                  if (!isMulti || (isSegStart && isSegEnd)) {
-                    barClasses = 'rounded-[4px] px-1.5'
-                  } else if (isSegStart) {
-                    barClasses = 'rounded-l-[4px] rounded-r-none pl-1.5 pr-0 -mr-[5px]'
-                  } else if (isSegEnd) {
-                    barClasses = 'rounded-r-[4px] rounded-l-none pr-1.5 pl-0 -ml-[5px]'
-                  } else {
-                    barClasses = 'rounded-none px-0 -mx-[5px]'
-                  }
-
+                  const isSegEnd   = !isMulti || ev.endDate === dateStr || colIdx === 6
                   const isDragging = draggingId === ev.id
-                  const stackClass = isDragging
-                    ? 'relative z-[20] opacity-40'
-                    : isMulti
-                    ? 'relative z-[10]'
-                    : ''
+
+                  let barClasses: string
+                  if (!isMulti || (isSegStart && isSegEnd)) barClasses = 'rounded-[4px] px-1.5'
+                  else if (isSegStart) barClasses = 'rounded-l-[4px] rounded-r-none pl-1.5 pr-0 -mr-[5px]'
+                  else if (isSegEnd)   barClasses = 'rounded-r-[4px] rounded-l-none pr-1.5 pl-0 -ml-[5px]'
+                  else                 barClasses = 'rounded-none px-0 -mx-[5px]'
+
+                  const stackClass = isDragging ? 'relative z-[20] opacity-40' : isMulti ? 'relative z-[10]' : ''
 
                   return (
                     <div
                       key={ev.id}
                       data-event-chip="true"
-                      draggable={!isMulti}
-                      onDragStart={!isMulti ? (e) => {
+                      onMouseDown={(e) => {
+                        if (e.button !== 0) return
                         e.stopPropagation()
-                        e.dataTransfer.setData('eventId', ev.id)
-                        e.dataTransfer.effectAllowed = 'move'
+                        drag.current = { eventId: ev.id, dropDate: null }
                         setDraggingId(ev.id)
-                      } : undefined}
-                      onDragEnd={!isMulti ? () => { setDraggingId(null); setDropOverDate(null) } : undefined}
-                      onMouseDown={(e) => e.stopPropagation()}
+                      }}
                       onClick={(e) => { e.stopPropagation(); onEventClick(ev) }}
-                      className={`hidden md:block text-[11px] leading-4 py-0.5 text-white font-medium hover:brightness-110 transition-all ${
-                        isMulti ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
-                      } ${stackClass} ${barClasses}`}
-                      style={{ backgroundColor: ev.color ?? '#6366f1' }}
+                      className={`block text-[11px] leading-4 py-0.5 min-h-[18px] text-white font-medium transition-all hover:brightness-110 cursor-grab ${stackClass} ${barClasses}`}
+                      style={{
+                        backgroundColor: ev.color ?? '#6366f1',
+                        // 드래그 중 모든 칩 투명 처리 → elementFromPoint가 셀을 찾음
+                        pointerEvents: draggingId ? 'none' : undefined,
+                      }}
                       title={ev.title}
                     >
                       {isSegStart ? (
@@ -256,14 +287,14 @@ export default function CalendarGrid({
                           {ev.startTime && <span className="opacity-75 mr-1">{ev.startTime}</span>}
                           {ev.title}
                         </span>
-                      ) : ' '}
+                      ) : <span>&nbsp;</span>}
                     </div>
                   )
                 })}
 
-                {dayEvents.length > 3 && (
+                {dayEvents.length > MAX_EVENTS_DESKTOP && (
                   <div className="hidden md:block text-[11px] text-neutral-500 px-1.5">
-                    +{dayEvents.length - 3}
+                    +{dayEvents.length - MAX_EVENTS_DESKTOP}
                   </div>
                 )}
 
