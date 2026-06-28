@@ -218,7 +218,7 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
           )}
 
           {/* ── 수정 뷰 ── */}
-          {typeof view === 'object' && view.type === 'edit' && (
+          {typeof view === 'object' && view.type === 'edit' && 'event' in view && (
             <EventForm
               initialTitle={view.event.title}
               initialDate={view.event.date}

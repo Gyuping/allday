@@ -25,7 +25,10 @@ export function useEventReminders() {
       const now = new Date()
 
       for (const ev of candidates) {
+        // 날짜 형식 검증 (YYYY-MM-DD)
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(ev.date)) continue
         const { year: yr, month: mo, day: dy } = parseDateStr(ev.date)
+        if (mo < 1 || mo > 12 || dy < 1 || dy > 31) continue
         const [h, m] = ev.startTime.split(':').map(Number)
         const eventTime = new Date(yr, mo - 1, dy, h, m, 0, 0)
         if (isNaN(eventTime.getTime())) continue

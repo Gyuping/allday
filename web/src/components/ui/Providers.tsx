@@ -32,18 +32,27 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     setCalendarUserId(user.uid)
     setTodoUserId(user.uid)
 
-    const unsubCalendar = subscribeCalendar(user.uid, setEvents)
-    const unsubTodos    = subscribeTodos(user.uid, setTodos)
+    // Firestore 구독 실패 시 로딩 해제 — 안 하면 isLoading이 영원히 true
+    const unsubCalendar = subscribeCalendar(
+      user.uid,
+      setEvents,
+      () => setCalendarLoading(false)
+    )
+    const unsubTodos = subscribeTodos(
+      user.uid,
+      setTodos,
+      () => setTodoLoading(false)
+    )
 
     // async 함수 호출 시 에러 무시 처리
-    resetExpiredCompleted().catch(() => {})
+    resetExpiredCompleted().catch((e) => console.error('[resetExpiredCompleted]', e))
 
     const scheduleMidnightReset = () => {
       const now = new Date()
       const msUntilMidnight =
         new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()
       midnightTimer.current = setTimeout(() => {
-        resetExpiredCompleted().catch(() => {})
+        resetExpiredCompleted().catch((e) => console.error('[resetExpiredCompleted]', e))
         scheduleMidnightReset()
       }, msUntilMidnight)
     }

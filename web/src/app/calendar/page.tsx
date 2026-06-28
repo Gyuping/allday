@@ -217,9 +217,9 @@ export default function CalendarPage() {
           onEventDrop={(eventId, newDate) => {
             const ev = filteredEvents.find((e) => e.id === eventId)
             if (!ev) return
-            if (ev.endDate) {
-              // 다중 날짜 일정 — 기간 유지하면서 날짜만 이동
-              const duration = new Date(ev.endDate).getTime() - new Date(ev.date).getTime()
+            if (ev.endDate && ev.endDate >= ev.date) {
+              // 다중 날짜 일정 — 기간 유지하면서 날짜만 이동 (duration은 항상 양수)
+              const duration = Math.max(0, new Date(ev.endDate).getTime() - new Date(ev.date).getTime())
               const newEndDate = new Date(new Date(newDate).getTime() + duration)
               updateEvent(eventId, {
                 date: newDate,

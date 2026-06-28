@@ -14,8 +14,12 @@ const HOUR_HEIGHT = 64
 const HOUR_LINES  = HOURS.map((h) => ({ hour: h, top: h * HOUR_HEIGHT, halfTop: h * HOUR_HEIGHT + HOUR_HEIGHT / 2 }))
 const SNAP = 15
 
+const TIME_RE = /^\d{1,2}:\d{2}$/
+
 function timeToMinutes(time: string): number {
+  if (!TIME_RE.test(time)) return NaN
   const [h, m] = time.split(':').map(Number)
+  if (h > 23 || m > 59) return NaN
   return h * 60 + m
 }
 function minutesToPx(minutes: number): number {

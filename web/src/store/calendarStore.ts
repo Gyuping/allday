@@ -1,5 +1,6 @@
 // 캘린더 이벤트 전역 상태 관리 — Firestore 연동
 // 낙관적 업데이트: 로컬 먼저 반영 → Firestore 실패 시 롤백
+// race condition 보호: 진행 중인 요청 추적으로 중복 수정 방지
 import { create } from 'zustand'
 import type { CalendarEvent } from '@/types'
 import {
@@ -13,6 +14,7 @@ type CalendarStore = {
   events: CalendarEvent[]
   userId: string | null
   isLoading: boolean
+  pendingIds: Set<string>  // 현재 Firestore 요청 중인 이벤트 id 집합
   setUserId: (id: string | null) => void
   setEvents: (events: CalendarEvent[]) => void
   setLoading: (v: boolean) => void
@@ -25,6 +27,7 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   events: [],
   userId: null,
   isLoading: true,
+  pendingIds: new Set(),
 
   setUserId: (id) => set({ userId: id }),
   setEvents: (events) => set({ events, isLoading: false }),
@@ -43,16 +46,30 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   },
 
   updateEvent: async (id, data) => {
-    const { userId, events } = get()
+    const { userId, events, pendingIds } = get()
     if (!userId) return
+    // 이미 같은 이벤트 수정 중이면 무시 (race condition 방지)
+    if (pendingIds.has(id)) return
     const prev = events.find((e) => e.id === id)
     if (!prev) return
-    set((s) => ({ events: s.events.map((e) => e.id === id ? { ...e, ...data } : e) }))
+
+    const next = new Set(pendingIds)
+    next.add(id)
+    set((s) => ({
+      pendingIds: next,
+      events: s.events.map((e) => e.id === id ? { ...e, ...data } : e),
+    }))
     try {
       await updateCalendarEvent(userId, id, data)
     } catch {
       set((s) => ({ events: s.events.map((e) => e.id === id ? prev : e) }))
       toast.error('일정 수정에 실패했어요. 다시 시도해주세요.')
+    } finally {
+      set((s) => {
+        const ids = new Set(s.pendingIds)
+        ids.delete(id)
+        return { pendingIds: ids }
+      })
     }
   },
 

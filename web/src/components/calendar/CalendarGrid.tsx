@@ -37,9 +37,12 @@ export default function CalendarGrid({
   // ── 날짜 범위 선택용 ref / state ──
   const [selStart,   setSelStart]   = useState<string | null>(null)
   const [selCurrent, setSelCurrent] = useState<string | null>(null)
-  const isSelecting = useRef(false)
-  const didDrag     = useRef(false)
-  const clickTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isSelecting  = useRef(false)
+  const didDrag      = useRef(false)
+  const clickTimer   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // selStart/selCurrent를 ref로도 미러링 — [] 의존성 effect에서 최신값 읽기 위해
+  const selStartRef  = useRef<string | null>(null)
+  const selCurrentRef = useRef<string | null>(null)
 
   // 콜백 ref — useEffect 의존성 없이 항상 최신 콜백을 사용
   const cbRef = useRef({ onDayClick, onDayDoubleClick, onEventDrop, onRangeSelect })
@@ -80,15 +83,19 @@ export default function CalendarGrid({
 
       // ── 날짜 범위 선택 완료 ──
       if (!isSelecting.current) return
-      const start   = selStart
-      const current = selCurrent
+      // ref에서 읽어야 최신값 (stale closure 방지)
+      const start   = selStartRef.current
+      const current = selCurrentRef.current
+      const wasDrag = didDrag.current
       isSelecting.current = false
       didDrag.current     = false
+      selStartRef.current  = null
+      selCurrentRef.current = null
       setSelStart(null)
       setSelCurrent(null)
 
       if (!start || !current) return
-      if (start === current && !didDrag.current) {
+      if (start === current && !wasDrag) {
         if (clickTimer.current) {
           clearTimeout(clickTimer.current)
           clickTimer.current = null
@@ -114,40 +121,9 @@ export default function CalendarGrid({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // selStart/selCurrent가 ref에 없으므로 mouseup에서 직접 읽지 못함
-  // 대신 이 별도 effect에서 처리 (기존 방식 유지)
-  useEffect(() => {
-    const onMouseUp = () => {
-      if (drag.current) return  // 이벤트 드래그는 위 effect가 처리
-      if (!isSelecting.current) return
-
-      const isSingleClick = selStart === selCurrent && !didDrag.current
-      isSelecting.current = false
-      didDrag.current     = false
-
-      if (!selStart) { setSelStart(null); setSelCurrent(null); return }
-
-      if (isSingleClick) {
-        if (clickTimer.current) {
-          clearTimeout(clickTimer.current)
-          clickTimer.current = null
-          cbRef.current.onDayDoubleClick(selStart)
-        } else {
-          const s = selStart
-          clickTimer.current = setTimeout(() => {
-            clickTimer.current = null
-            cbRef.current.onDayClick(s)
-          }, 130)
-        }
-      } else if (selCurrent) {
-        cbRef.current.onRangeSelect(selStart, selCurrent)
-      }
-      setSelStart(null)
-      setSelCurrent(null)
-    }
-    window.addEventListener('mouseup', onMouseUp)
-    return () => window.removeEventListener('mouseup', onMouseUp)
-  }, [selStart, selCurrent])
+  // selStart/selCurrent 변경 시 ref도 동기화 (mouseup 핸들러에서 최신값 읽기 위해)
+  selStartRef.current   = selStart
+  selCurrentRef.current = selCurrent
 
   const firstDayOfWeek = new Date(year, month, 1).getDay()
   const daysInMonth    = new Date(year, month + 1, 0).getDate()
@@ -207,15 +183,18 @@ export default function CalendarGrid({
                 if (e.button !== 0) return
                 if ((e.target as HTMLElement).closest('[data-event-chip]')) return
                 e.preventDefault()
-                isSelecting.current = true
-                didDrag.current     = false
+                isSelecting.current   = true
+                didDrag.current       = false
+                selStartRef.current   = dateStr
+                selCurrentRef.current = dateStr
                 setSelStart(dateStr)
                 setSelCurrent(dateStr)
               }}
               onMouseEnter={() => {
                 if (drag.current) return
                 if (!isSelecting.current) return
-                if (selCurrent !== dateStr) didDrag.current = true
+                if (selCurrentRef.current !== dateStr) didDrag.current = true
+                selCurrentRef.current = dateStr
                 setSelCurrent(dateStr)
               }}
               className={`border-r border-b border-neutral-700 min-h-20 md:min-h-24 p-1 cursor-pointer bg-neutral-900 transition-colors group relative ${
