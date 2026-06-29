@@ -1,6 +1,5 @@
 'use client'
 
-// 전역 토스트 알림 스토어
 import { create } from 'zustand'
 
 type ToastType = 'success' | 'error' | 'info'
@@ -17,7 +16,6 @@ type ToastStore = {
   remove: (id: string) => void
 }
 
-// ?�?�머 id �????�스???�거 ?�에 clear 가?�하?�록 추적
 const timers = new Map<string, ReturnType<typeof setTimeout>>()
 
 export const useToastStore = create<ToastStore>((set) => ({
@@ -32,7 +30,6 @@ export const useToastStore = create<ToastStore>((set) => ({
     timers.set(id, tid)
   },
   remove: (id) => {
-    // ?�동 ?�거 ???�?�머??취소
     const tid = timers.get(id)
     if (tid) { clearTimeout(tid); timers.delete(id) }
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))

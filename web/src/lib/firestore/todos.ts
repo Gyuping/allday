@@ -1,7 +1,5 @@
 'use client'
 
-// Firestore ?�일 CRUD
-// 경로: users/{userId}/todos/{todoId}
 import {
   collection, doc, onSnapshot,
   setDoc, updateDoc, deleteDoc, writeBatch, deleteField, FieldValue,

@@ -1,7 +1,5 @@
 'use client'
 
-// ?�일 목록 ?�역 ?�태 관�???Firestore ?�동
-// ?��????�데?�트: 로컬 먼�? 반영 ??Firestore ?�패 ??롤백
 import { create } from 'zustand'
 import type { Todo } from '@/types'
 import {
@@ -44,7 +42,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsAdd(userId, todo)
     } catch {
       set((s) => ({ todos: s.todos.filter((t) => t.id !== todo.id) }))
-      toast.error('?�일 ?�?�에 ?�패?�어??')
+      toast.error('할일 저장에 실패했어요.')
     }
   },
 
@@ -58,7 +56,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsUpdate(userId, id, data)
     } catch {
       set((s) => ({ todos: s.todos.map((t) => t.id === id ? prev : t) }))
-      toast.error('?�일 ?�정???�패?�어??')
+      toast.error('할일 수정에 실패했어요.')
     }
   },
 
@@ -74,7 +72,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsUpdate(userId, id, { completed, completedAt: completedAt ?? null } as Partial<Todo>)
     } catch {
       set((s) => ({ todos: s.todos.map((t) => t.id === id ? todo : t) }))
-      toast.error('?�태 변경에 ?�패?�어??')
+      toast.error('상태 변경에 실패했어요.')
     }
   },
 
@@ -87,22 +85,21 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsDelete(userId, id)
     } catch {
       if (prev) set((s) => ({ todos: [...s.todos, prev] }))
-      toast.error('?�일 ??��???�패?�어??')
+      toast.error('할일 삭제에 실패했어요.')
     }
   },
 
-  // 미완�???���???�� ???�료????��?� 캘린??기록 보존???�해 ?��?
   clearAll: async () => {
     const { todos, userId } = get()
     if (!userId) return
-    const toDelete  = todos.filter((t) => !t.completed)
-    const toKeep    = todos.filter((t) =>  t.completed)
+    const toDelete = todos.filter((t) => !t.completed)
+    const toKeep   = todos.filter((t) =>  t.completed)
     if (toDelete.length === 0) return
     set({ todos: toKeep })
     try {
       await fsClear(userId, toDelete.map((t) => t.id))
     } catch {
-      set({ todos })  // ?�패 ???�복
+      set({ todos })
     }
   },
 

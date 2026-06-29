@@ -1,7 +1,5 @@
 'use client'
 
-// Firestore 캘린???�벤??CRUD
-// 경로: users/{userId}/calendar/{eventId}
 import {
   collection, doc, onSnapshot,
   setDoc, updateDoc, deleteDoc, deleteField, FieldValue,
@@ -12,7 +10,6 @@ import type { CalendarEvent } from '@/types'
 const col = (userId: string) => collection(db, 'users', userId, 'calendar')
 const ref = (userId: string, id: string) => doc(db, 'users', userId, 'calendar', id)
 
-// error 콜백 추가 — 권한 오류 시 Firestore 에러를 호출자가 처리할 수 있도록
 export function subscribeCalendar(
   userId: string,
   callback: (events: CalendarEvent[]) => void,
@@ -31,12 +28,10 @@ export function subscribeCalendar(
   )
 }
 
-// setDoc?? undefined ?�드???�예 ?�외 (deleteField?� updateDoc?�서�??�효)
 function cleanForSet(obj: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined))
 }
 
-// updateDoc?? undefined ?�드??deleteField()�?명시????��
 function cleanForUpdate(obj: Record<string, unknown>): Record<string, unknown | FieldValue> {
   return Object.fromEntries(
     Object.entries(obj).map(([k, v]) => [k, v === undefined ? deleteField() : v])

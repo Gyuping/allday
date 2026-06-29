@@ -1,22 +1,19 @@
 'use client'
 
-// ?‰ìƒë³??¬ìš©???•ì˜ ?¼ë²¨???€?¥í•˜??Zustand ?¤í† ??// ?? '#ef4444' ??'ë³‘ì›', '#3b82f6' ??'?Œì‚¬'
-// ColorPicker?ì„œ ?‰ìƒ???”ë¸”?´ë¦­???´ë¦„??ë¶™ì¼ ???ˆë‹¤.
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
 type ColorLabelStore = {
-  labels: Record<string, string>  // { ?‰ìƒì½”ë“œ: ?¼ë²¨?´ë¦„ }
+  labels: Record<string, string>
   setLabel: (color: string, label: string) => void
 }
 
-// localStorage ?‘ê·¼ ?¤íŒ¨(private ë¸Œë¼?°ì§•, ?©ëŸ‰ ì´ˆê³¼ ?????ˆì „?˜ê²Œ ?€?‘í•˜???˜í¼
 const safeStorage = {
   getItem: (key: string) => {
     try { return localStorage.getItem(key) } catch { return null }
   },
   setItem: (key: string, value: string) => {
-    try { localStorage.setItem(key, value) } catch { /* quota ì´ˆê³¼ ??ì¡°ìš©??ë¬´ì‹œ */ }
+    try { localStorage.setItem(key, value) } catch { /* quota ì´ˆê³¼ ì‹œ ë¬´ì‹œ */ }
   },
   removeItem: (key: string) => {
     try { localStorage.removeItem(key) } catch { /* ë¬´ì‹œ */ }
