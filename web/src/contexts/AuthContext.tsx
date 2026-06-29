@@ -21,7 +21,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Firebase가 로그인 상태를 자동으로 감지해서 알려준다
+    // auth가 초기화되지 않으면 (env 미설정 등) 로딩만 해제
+    if (!auth) { setLoading(false); return }
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u)
       setLoading(false)
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signInWithGoogle = async () => {
+    if (!auth) { alert('Firebase가 초기화되지 않았습니다. 환경변수를 확인해주세요.'); return }
     const provider = new GoogleAuthProvider()
     try {
       await signInWithPopup(auth, provider)
