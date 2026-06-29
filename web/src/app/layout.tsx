@@ -1,9 +1,7 @@
-// 앱 전체 레이아웃
-// Firebase를 사용하는 ClientRoot는 ssr: false로 서버 번들에서 완전히 제외
 import type { Metadata } from 'next'
 import { Geist, Space_Grotesk } from 'next/font/google'
 import './globals.css'
-import dynamic from 'next/dynamic'
+import ClientRoot from '@/components/ui/ClientRoot'
 
 const geist = Geist({
   subsets: ['latin'],
@@ -16,9 +14,6 @@ const spaceGrotesk = Space_Grotesk({
   weight: ['400', '600', '700'],
   fallback: ['Segoe UI', 'system-ui', 'sans-serif'],
 })
-
-// ssr: false — Firebase 전체가 서버 번들에서 제외됨
-const ClientRoot = dynamic(() => import('@/components/ui/ClientRoot'), { ssr: false })
 
 export const metadata: Metadata = {
   title: 'AllDay',
