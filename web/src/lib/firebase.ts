@@ -1,5 +1,4 @@
 // Firebase 초기화 — 앱 전체에서 하나의 인스턴스만 생성한다.
-// NEXT_PUBLIC_ 변수는 클라이언트에서만 유효 — 빌드 시 SSR 환경에서는 undefined일 수 있음
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
