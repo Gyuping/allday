@@ -1,14 +1,10 @@
-// 앱 전체 레이아웃 — 모든 페이지를 감싸는 루트 컴포넌트
+// 앱 전체 레이아웃
+// Firebase를 사용하는 ClientRoot는 ssr: false로 서버 번들에서 완전히 제외
 import type { Metadata } from 'next'
 import { Geist, Space_Grotesk } from 'next/font/google'
 import './globals.css'
-import Sidebar from '@/components/ui/Sidebar'
-import BottomTabBar from '@/components/ui/BottomTabBar'
-import Providers from '@/components/ui/Providers'
-import { AuthProvider } from '@/contexts/AuthContext'
-import AppShell from '@/components/ui/AppShell'
+import dynamic from 'next/dynamic'
 
-// fallback: 폰트 로드 실패 시(Windows 네트워크 오류 등) 시스템 폰트로 대체
 const geist = Geist({
   subsets: ['latin'],
   variable: '--font-geist',
@@ -17,9 +13,12 @@ const geist = Geist({
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-logo',
-  weight: ['400', '600', '700'],  // 다양한 굵기 — Mac/Windows 렌더링 차이 완화
+  weight: ['400', '600', '700'],
   fallback: ['Segoe UI', 'system-ui', 'sans-serif'],
 })
+
+// ssr: false — Firebase 전체가 서버 번들에서 제외됨
+const ClientRoot = dynamic(() => import('@/components/ui/ClientRoot'), { ssr: false })
 
 export const metadata: Metadata = {
   title: 'AllDay',
@@ -30,9 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className={`${geist.variable} ${spaceGrotesk.variable}`}>
       <body className="flex min-h-screen bg-neutral-950 text-neutral-100 antialiased">
-        <AuthProvider>
-          <AppShell>{children}</AppShell>
-        </AuthProvider>
+        <ClientRoot>{children}</ClientRoot>
       </body>
     </html>
   )
