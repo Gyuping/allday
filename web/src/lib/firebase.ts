@@ -1,6 +1,5 @@
 'use client'
 
-// Firebase ì´ˆê¸°?????´ë¼?´ì–¸?¸ì—?œë§Œ ?¤í–‰ (SSR ë¹Œë“œ ???ˆë? ?¤í–‰ ????
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, type Auth } from 'firebase/auth'
 import { getFirestore, type Firestore } from 'firebase/firestore'
@@ -14,7 +13,6 @@ const firebaseConfig = {
   appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? '',
 }
 
-// ?œë²„(SSR/ë¹Œë“œ)?ì„œ??ì´ˆê¸°??ê±´ë„ˆ?€ ???´ë¼?´ì–¸?¸ì—?œë§Œ Firebase ?¬ìš©
 let _app: FirebaseApp | undefined
 let _auth: Auth | undefined
 let _db: Firestore | undefined
@@ -25,7 +23,6 @@ if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
   _db   = getFirestore(_app)
 }
 
-// 'use client' ì»´í¬?ŒíŠ¸?ì„œë§??¬ìš©?˜ë?ë¡??°í??„ì— ??ƒ ì´ˆê¸°?”ë¨
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const auth = _auth!
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
