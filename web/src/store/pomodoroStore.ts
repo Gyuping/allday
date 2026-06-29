@@ -1,6 +1,7 @@
-// 포모도로 타이머 상태를 전역으로 관리하는 Zustand 스토어
-// 타이머 동작 상태(phase, secondsLeft 등)는 새로고침 시 초기화되고,
-// 사용자 설정(settings)만 localStorage에 저장된다.
+'use client'
+
+// ?�모?�로 ?�?�머 ?�태�??�역?�로 관리하??Zustand ?�토??// ?�?�머 ?�작 ?�태(phase, secondsLeft ?????�로고침 ??초기?�되�?
+// ?�용???�정(settings)�?localStorage???�?�된??
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { PomodoroSettings, PomodoroPhase } from '@/types'
@@ -38,7 +39,7 @@ export const usePomodoroStore = create<PomodoroStore>()(
       updateSettings: (updated) =>
         set((s) => ({ settings: { ...s.settings, ...updated } })),
 
-      // 페이즈를 변경하면 해당 페이즈 시간으로 타이머가 자동 리셋되고 멈춘다.
+      // ?�이즈�? 변경하�??�당 ?�이�??�간?�로 ?�?�머가 ?�동 리셋?�고 멈춘??
       setPhase: (phase) =>
         set((s) => {
           const mins =
@@ -52,7 +53,7 @@ export const usePomodoroStore = create<PomodoroStore>()(
       setSecondsLeft: (seconds) => set({ secondsLeft: seconds }),
       incrementSession: () => set((s) => ({ sessionCount: s.sessionCount + 1 })),
 
-      // 현재 설정의 집중 시간으로 타이머를 초기화하고 멈춤
+      // ?�재 ?�정??집중 ?�간?�로 ?�?�머�?초기?�하�?멈춤
       reset: () => {
         const { settings } = get()
         set({ secondsLeft: settings.workMinutes * 60, isRunning: false, phase: 'work' })
@@ -60,8 +61,8 @@ export const usePomodoroStore = create<PomodoroStore>()(
     }),
     {
       name: 'allay-pomodoro',
-      // settings만 저장하고 타이머 상태(phase, isRunning 등)는 저장하지 않는다.
-      // 새로고침 후 진행 중이던 타이머가 이상한 상태로 복원되는 걸 방지
+      // settings�??�?�하�??�?�머 ?�태(phase, isRunning ?????�?�하지 ?�는??
+      // ?�로고침 ??진행 중이???�?�머가 ?�상???�태�?복원?�는 �?방�?
       partialize: (s) => ({ settings: s.settings }),
     }
   )

@@ -1,4 +1,6 @@
-// Firestore 할일 CRUD
+'use client'
+
+// Firestore ?�일 CRUD
 // 경로: users/{userId}/todos/{todoId}
 import {
   collection, doc, onSnapshot,

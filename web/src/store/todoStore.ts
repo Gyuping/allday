@@ -1,5 +1,7 @@
-// 할일 목록 전역 상태 관리 — Firestore 연동
-// 낙관적 업데이트: 로컬 먼저 반영 → Firestore 실패 시 롤백
+'use client'
+
+// ?�일 목록 ?�역 ?�태 관�???Firestore ?�동
+// ?��????�데?�트: 로컬 먼�? 반영 ??Firestore ?�패 ??롤백
 import { create } from 'zustand'
 import type { Todo } from '@/types'
 import {
@@ -42,7 +44,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsAdd(userId, todo)
     } catch {
       set((s) => ({ todos: s.todos.filter((t) => t.id !== todo.id) }))
-      toast.error('할일 저장에 실패했어요.')
+      toast.error('?�일 ?�?�에 ?�패?�어??')
     }
   },
 
@@ -56,7 +58,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsUpdate(userId, id, data)
     } catch {
       set((s) => ({ todos: s.todos.map((t) => t.id === id ? prev : t) }))
-      toast.error('할일 수정에 실패했어요.')
+      toast.error('?�일 ?�정???�패?�어??')
     }
   },
 
@@ -72,7 +74,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsUpdate(userId, id, { completed, completedAt: completedAt ?? null } as Partial<Todo>)
     } catch {
       set((s) => ({ todos: s.todos.map((t) => t.id === id ? todo : t) }))
-      toast.error('상태 변경에 실패했어요.')
+      toast.error('?�태 변경에 ?�패?�어??')
     }
   },
 
@@ -85,11 +87,11 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsDelete(userId, id)
     } catch {
       if (prev) set((s) => ({ todos: [...s.todos, prev] }))
-      toast.error('할일 삭제에 실패했어요.')
+      toast.error('?�일 ??��???�패?�어??')
     }
   },
 
-  // 미완료 항목만 삭제 — 완료된 항목은 캘린더 기록 보존을 위해 유지
+  // 미완�???���???�� ???�료????��?� 캘린??기록 보존???�해 ?��?
   clearAll: async () => {
     const { todos, userId } = get()
     if (!userId) return
@@ -100,7 +102,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
     try {
       await fsClear(userId, toDelete.map((t) => t.id))
     } catch {
-      set({ todos })  // 실패 시 원복
+      set({ todos })  // ?�패 ???�복
     }
   },
 
