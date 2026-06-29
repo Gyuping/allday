@@ -245,6 +245,7 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
             {timedEvents.map((ev) => {
               if (!ev.startTime) return null
               const startMin = timeToMinutes(ev.startTime)
+              if (isNaN(startMin)) return null  // 잘못된 시간 형식 방어
               const rawEnd   = ev.endTime ? timeToMinutes(ev.endTime) : NaN
               const endMin   = isNaN(rawEnd) || rawEnd <= startMin ? startMin + 60 : rawEnd
               const top      = minutesToPx(startMin)

@@ -7,6 +7,7 @@ import { useTodoStore } from '@/store/todoStore'
 import { subscribeCalendar } from '@/lib/firestore/calendar'
 import { subscribeTodos } from '@/lib/firestore/todos'
 import { useEventReminders } from '@/hooks/useEventReminders'
+import { toast } from '@/store/toastStore'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   useEventReminders()
@@ -36,12 +37,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     const unsubCalendar = subscribeCalendar(
       user.uid,
       setEvents,
-      () => setCalendarLoading(false)
+      (e) => { console.error('[calendar]', e); setCalendarLoading(false); toast.error('캘린더를 불러오지 못했어요.') }
     )
     const unsubTodos = subscribeTodos(
       user.uid,
       setTodos,
-      () => setTodoLoading(false)
+      (e) => { console.error('[todos]', e); setTodoLoading(false); toast.error('할일을 불러오지 못했어요.') }
     )
 
     // async 함수 호출 시 에러 무시 처리

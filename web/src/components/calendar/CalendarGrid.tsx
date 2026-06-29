@@ -121,7 +121,8 @@ export default function CalendarGrid({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // selStart/selCurrent 변경 시 ref도 동기화 (mouseup 핸들러에서 최신값 읽기 위해)
+  // render 본문에서 ref 동기화 — mousedown에서도 직접 업데이트하므로 안전
+  // (mousedown → setState → re-render 시 ref도 최신값으로 갱신됨)
   selStartRef.current   = selStart
   selCurrentRef.current = selCurrent
 

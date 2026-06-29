@@ -29,6 +29,8 @@ export function useEventReminders() {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(ev.date)) continue
         const { year: yr, month: mo, day: dy } = parseDateStr(ev.date)
         if (mo < 1 || mo > 12 || dy < 1 || dy > 31) continue
+        // 2월 30일 같은 논리적으로 잘못된 날짜 거르기
+        if (new Date(yr, mo - 1, dy).getDate() !== dy) continue
         const [h, m] = ev.startTime.split(':').map(Number)
         const eventTime = new Date(yr, mo - 1, dy, h, m, 0, 0)
         if (isNaN(eventTime.getTime())) continue
