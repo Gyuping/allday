@@ -34,10 +34,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signInWithGoogle = async () => {
-    if (!auth) { alert('Firebase가 초기화되지 않았습니다. 환경변수를 확인해주세요.'); return }
+    if (!auth) { alert('Firebase 초기화 실패'); return }
     const provider = new GoogleAuthProvider()
-    // 팝업 차단 문제를 피하기 위해 리다이렉트 방식 사용
-    await signInWithRedirect(auth, provider)
+    try {
+      await signInWithRedirect(auth, provider)
+    } catch (e) {
+      alert('로그인 오류: ' + (e instanceof Error ? e.message : String(e)))
+    }
   }
 
   const logout = async () => {
