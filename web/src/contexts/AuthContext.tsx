@@ -37,9 +37,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!auth) { alert('Firebase 초기화 실패'); return }
     const provider = new GoogleAuthProvider()
     try {
-      await signInWithRedirect(auth, provider)
+      await signInWithPopup(auth, provider)
     } catch (e) {
-      alert('로그인 오류: ' + (e instanceof Error ? e.message : String(e)))
+      if (!(e instanceof FirebaseError)) throw e
+      if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return
+      if (e.code === 'auth/popup-blocked') {
+        await signInWithRedirect(auth, provider)
+        return
+      }
+      alert('로그인 오류: ' + e.message)
     }
   }
 
