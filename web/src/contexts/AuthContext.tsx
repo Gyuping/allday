@@ -36,18 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     if (!auth) { alert('Firebase가 초기화되지 않았습니다. 환경변수를 확인해주세요.'); return }
     const provider = new GoogleAuthProvider()
-    try {
-      await signInWithPopup(auth, provider)
-    } catch (e) {
-      if (!(e instanceof FirebaseError)) throw e
-      if (e.code === 'auth/cancelled-popup-request' || e.code === 'auth/popup-closed-by-user') return
-      // 팝업 차단 시 리다이렉트 방식으로 전환
-      if (e.code === 'auth/popup-blocked') {
-        await signInWithRedirect(auth, provider)
-        return
-      }
-      throw e
-    }
+    // 팝업 차단 문제를 피하기 위해 리다이렉트 방식 사용
+    await signInWithRedirect(auth, provider)
   }
 
   const logout = async () => {
