@@ -1,7 +1,7 @@
 'use client'
 
-// 로그인 여부에 따라 앱 본체 또는 로그인 화면을 보여주는 셸
 import { useAuth } from '@/contexts/AuthContext'
+import { usePomodoroTimer } from '@/hooks/usePomodoroTimer'
 import LoginScreen from './LoginScreen'
 import Providers from './Providers'
 import Sidebar from './Sidebar'
@@ -11,6 +11,7 @@ import ErrorBoundary from './ErrorBoundary'
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
+  usePomodoroTimer()
 
   if (loading) {
     return (

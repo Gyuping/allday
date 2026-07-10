@@ -4,10 +4,9 @@
 // 데스크톱: 왼쪽(모드/설정) + 중앙(타이머) + 오른쪽(통계) 3단 레이아웃
 // 모바일: 중앙 타이머만 표시, 상단에 모드 선택 탭 추가
 // 타이머 숫자를 클릭해 시간을 직접 입력할 수 있다.
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Play, Pause, RotateCcw, SkipForward, Settings } from 'lucide-react'
 import { usePomodoroStore } from '@/store/pomodoroStore'
-import { playWorkComplete, playBreakComplete } from '@/lib/sounds'
 import type { PomodoroPhase } from '@/types'
 import SettingsModal from '@/components/pomodoro/SettingsModal'
 
@@ -53,7 +52,7 @@ const SIZE = 340
 export default function PomodoroPage() {
   const {
     settings, phase, sessionCount, isRunning, secondsLeft,
-    setPhase, setRunning, setSecondsLeft, incrementSession, reset, updateSettings,
+    setPhase, setRunning, setSecondsLeft, reset, updateSettings,
   } = usePomodoroStore()
 
   const [showSettings, setShowSettings] = useState(false)
@@ -74,27 +73,15 @@ export default function PomodoroPage() {
   const sessionsInCycle = sessionCount % settings.sessionsBeforeLongBreak
   const pct = Math.round(progress * 100)
 
-  const completePhase = (skipCount = false) => {
-    const st = usePomodoroStore.getState()
-    const p = st.phase; const sc = st.sessionCount
-    setRunning(false)
-    if (p === 'work') {
-      const newCount = skipCount ? sc : sc + 1
-      if (!skipCount) incrementSession()
-      const nextPhase: PomodoroPhase = newCount % st.settings.sessionsBeforeLongBreak === 0 ? 'longBreak' : 'shortBreak'
-      setPhase(nextPhase)
-      if (!skipCount) {
-        playWorkComplete()
-        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted')
-          new Notification('집중 완료! 🎉 휴식을 취하세요', { icon: '/favicon.ico' })
-      }
+  // 스킵 버튼 전용 — 카운트/사운드 없이 다음 페이즈로 이동
+  const skipPhase = () => {
+    const { phase, sessionCount, settings } = usePomodoroStore.getState()
+    if (phase === 'work') {
+      const next: PomodoroPhase =
+        sessionCount % settings.sessionsBeforeLongBreak === 0 ? 'longBreak' : 'shortBreak'
+      setPhase(next)
     } else {
       setPhase('work')
-      if (!skipCount) {
-        playBreakComplete()
-        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted')
-          new Notification('휴식 종료! 다시 집중해볼까요?', { icon: '/favicon.ico' })
-      }
     }
   }
 
@@ -126,19 +113,6 @@ export default function PomodoroPage() {
     if (totalSecs > 0) setSecondsLeft(totalSecs)
     setEditingTime(false)
   }
-
-  const completeRef = useRef(completePhase)
-  completeRef.current = completePhase
-
-  useEffect(() => {
-    if (!isRunning) return
-    const tick = setInterval(() => {
-      const { secondsLeft: cur } = usePomodoroStore.getState()
-      if (cur <= 1) { clearInterval(tick); setSecondsLeft(0); completeRef.current() }
-      else setSecondsLeft(Math.max(0, cur - 1))
-    }, 1000)
-    return () => clearInterval(tick)
-  }, [isRunning, setSecondsLeft])
 
   useEffect(() => {
     document.title = isRunning ? `${mins}:${secs} — AllDay` : 'AllDay'
@@ -304,7 +278,7 @@ export default function PomodoroPage() {
               {isRunning ? <Pause size={30} fill="white" /> : <Play size={30} fill="white" className="ml-1" />}
             </button>
 
-            <button onClick={() => completePhase(true)}
+            <button onClick={skipPhase}
               className="w-14 h-14 rounded-2xl flex items-center justify-center text-neutral-600 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 transition-all">
               <SkipForward size={20} />
             </button>

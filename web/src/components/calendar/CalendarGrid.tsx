@@ -39,7 +39,6 @@ export default function CalendarGrid({
   const [selCurrent, setSelCurrent] = useState<string | null>(null)
   const isSelecting  = useRef(false)
   const didDrag      = useRef(false)
-  const clickTimer   = useRef<ReturnType<typeof setTimeout> | null>(null)
   // selStart/selCurrent를 ref로도 미러링 — [] 의존성 effect에서 최신값 읽기 위해
   const selStartRef  = useRef<string | null>(null)
   const selCurrentRef = useRef<string | null>(null)
@@ -96,16 +95,7 @@ export default function CalendarGrid({
 
       if (!start || !current) return
       if (start === current && !wasDrag) {
-        if (clickTimer.current) {
-          clearTimeout(clickTimer.current)
-          clickTimer.current = null
-          cbRef.current.onDayDoubleClick(start)
-        } else {
-          clickTimer.current = setTimeout(() => {
-            clickTimer.current = null
-            cbRef.current.onDayClick(start)
-          }, 130)
-        }
+        cbRef.current.onDayClick(start)
       } else {
         cbRef.current.onRangeSelect(start, current)
       }
@@ -143,6 +133,28 @@ export default function CalendarGrid({
     [events]
   )
 
+  // 주(week) 단위 이벤트 슬롯 — 같은 주 안에서 이벤트가 항상 같은 행에 표시되도록 순서를 고정
+  const weekEventSlots = useMemo(() => {
+    const slotMap = new Map<string, number>() // `${weekIdx}-${eventId}` → slot
+    const totalWeeks = Math.ceil(cells.length / 7)
+    for (let w = 0; w < totalWeeks; w++) {
+      const weekDates = cells
+        .slice(w * 7, (w + 1) * 7)
+        .flatMap((day) => (day !== null ? [toDateStr(year, month, day)] : []))
+      const seen = new Map<string, CalendarEvent>()
+      weekDates.forEach((d) => (eventsByDate[d] ?? []).forEach((ev) => seen.set(ev.id, ev)))
+      // 다중날짜 우선, 그 다음 시작일 오름차순, 그 다음 종료일 내림차순(긴 일정 우선)
+      const sorted = [...seen.values()].sort((a, b) => {
+        const aM = !!a.endDate, bM = !!b.endDate
+        if (aM !== bM) return aM ? -1 : 1
+        if (a.date !== b.date) return a.date.localeCompare(b.date)
+        return (b.endDate ?? b.date).localeCompare(a.endDate ?? a.date)
+      })
+      sorted.forEach((ev, i) => slotMap.set(`${w}-${ev.id}`, i))
+    }
+    return slotMap
+  }, [cells, eventsByDate, year, month])
+
   return (
     <div className="flex flex-col flex-1 select-none">
       {/* 요일 헤더 */}
@@ -171,9 +183,25 @@ export default function CalendarGrid({
           const holidayName   = holidays[dateStr]
           const isHolidayColor = isSun || isSat || !!holidayName
 
+          const weekIdx = Math.floor(idx / 7)
+
+          // 이 날에 있는 이벤트를 슬롯 번호로 매핑
+          const slotToEv = new Map<number, CalendarEvent>()
+          ;(eventsByDate[dateStr] ?? []).forEach((ev) => {
+            const s = weekEventSlots.get(`${weekIdx}-${ev.id}`)
+            if (s !== undefined && s < MAX_EVENTS_DESKTOP) slotToEv.set(s, ev)
+          })
+          // 이 날의 최고 슬롯 번호까지 배열 생성 (빈 슬롯은 null → 투명 공간으로 렌더)
+          const maxSlot = slotToEv.size > 0 ? Math.max(...slotToEv.keys()) : -1
+          const slots: (CalendarEvent | null)[] = Array.from(
+            { length: maxSlot + 1 }, (_, i) => slotToEv.get(i) ?? null
+          )
+          const hiddenCount = (eventsByDate[dateStr] ?? []).length - slotToEv.size
+          // 모바일 도트용 (슬롯 순서 유지)
           const dayEvents = [...(eventsByDate[dateStr] ?? [])].sort((a, b) => {
-            if (!!a.endDate !== !!b.endDate) return a.endDate ? -1 : 1
-            return (a.startTime ?? '').localeCompare(b.startTime ?? '')
+            const sA = weekEventSlots.get(`${weekIdx}-${a.id}`) ?? 999
+            const sB = weekEventSlots.get(`${weekIdx}-${b.id}`) ?? 999
+            return sA - sB
           })
 
           return (
@@ -229,7 +257,11 @@ export default function CalendarGrid({
               </div>
 
               <div className="flex flex-col gap-0.5">
-                {dayEvents.slice(0, MAX_EVENTS_DESKTOP).map((ev) => {
+                {slots.map((ev, slotIdx) => {
+                  if (ev === null) {
+                    // 빈 슬롯 — chip과 동일한 높이로 다음 이벤트 위치 유지
+                    return <div key={`spacer-${slotIdx}`} className="block text-[11px] leading-4 py-0.5 min-h-[18px] pointer-events-none">&nbsp;</div>
+                  }
                   const isMulti    = !!ev.endDate
                   const isSegStart = !isMulti || ev.date === dateStr || colIdx === 0
                   const isSegEnd   = !isMulti || ev.endDate === dateStr || colIdx === 6
@@ -257,7 +289,6 @@ export default function CalendarGrid({
                       className={`block text-[11px] leading-4 py-0.5 min-h-[18px] text-white font-medium transition-all hover:brightness-110 cursor-grab ${stackClass} ${barClasses}`}
                       style={{
                         backgroundColor: ev.color ?? '#6366f1',
-                        // 드래그 중 모든 칩 투명 처리 → elementFromPoint가 셀을 찾음
                         pointerEvents: draggingId ? 'none' : undefined,
                       }}
                       title={ev.title}
@@ -272,9 +303,9 @@ export default function CalendarGrid({
                   )
                 })}
 
-                {dayEvents.length > MAX_EVENTS_DESKTOP && (
+                {hiddenCount > 0 && (
                   <div className="hidden md:block text-[11px] text-neutral-500 px-1.5">
-                    +{dayEvents.length - MAX_EVENTS_DESKTOP}
+                    +{hiddenCount}
                   </div>
                 )}
 
