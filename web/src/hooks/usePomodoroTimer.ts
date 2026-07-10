@@ -32,16 +32,18 @@ export function usePomodoroTimer() {
 
   useEffect(() => {
     if (!isRunning) return
+    // Date.now() 기준으로 경과 시간을 계산 — 맥 잠자기/백그라운드 탭 스로틀링에도 정확하게 동작
+    const startAt = Date.now()
+    const startWith = usePomodoroStore.getState().secondsLeft
     const tick = setInterval(() => {
-      const { secondsLeft: cur } = usePomodoroStore.getState()
-      if (cur <= 1) {
+      const elapsed = Math.floor((Date.now() - startAt) / 1000)
+      const remaining = Math.max(0, startWith - elapsed)
+      setSecondsLeft(remaining)
+      if (remaining <= 0) {
         clearInterval(tick)
-        setSecondsLeft(0)
         completeRef.current()
-      } else {
-        setSecondsLeft(Math.max(0, cur - 1))
       }
-    }, 1000)
+    }, 500)
     return () => clearInterval(tick)
   }, [isRunning, setSecondsLeft])
 }

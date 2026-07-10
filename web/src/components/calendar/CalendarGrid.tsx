@@ -267,11 +267,12 @@ export default function CalendarGrid({
                   const isSegEnd   = !isMulti || ev.endDate === dateStr || colIdx === 6
                   const isDragging = draggingId === ev.id
 
+                  // 셀 패딩(4px) + 우측 border(1px) = 5px를 width calc()로 확장 → 셀 경계에서 바가 끊기지 않음
                   let barClasses: string
                   if (!isMulti || (isSegStart && isSegEnd)) barClasses = 'rounded-[4px] px-1.5'
-                  else if (isSegStart) barClasses = 'rounded-l-[4px] rounded-r-none pl-1.5 pr-0 -mr-[5px]'
-                  else if (isSegEnd)   barClasses = 'rounded-r-[4px] rounded-l-none pr-1.5 pl-0 -ml-[5px]'
-                  else                 barClasses = 'rounded-none px-0 -mx-[5px]'
+                  else if (isSegStart) barClasses = 'rounded-l-[4px] rounded-r-none pl-1.5 pr-0 w-[calc(100%+5px)]'
+                  else if (isSegEnd)   barClasses = 'rounded-r-[4px] rounded-l-none pr-1.5 pl-0 -ml-1 w-[calc(100%+4px)]'
+                  else                 barClasses = 'rounded-none px-0 -ml-1 w-[calc(100%+9px)]'
 
                   const stackClass = isDragging ? 'relative z-[20] opacity-40' : isMulti ? 'relative z-[10]' : ''
 

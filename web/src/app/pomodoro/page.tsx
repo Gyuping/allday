@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Play, Pause, RotateCcw, SkipForward, Settings } from 'lucide-react'
 import { usePomodoroStore } from '@/store/pomodoroStore'
+import { unlockAudio } from '@/lib/sounds'
 import type { PomodoroPhase } from '@/types'
 import SettingsModal from '@/components/pomodoro/SettingsModal'
 
@@ -268,7 +269,7 @@ export default function PomodoroPage() {
               <RotateCcw size={20} />
             </button>
 
-            <button onClick={() => setRunning(!isRunning)}
+            <button onClick={() => { unlockAudio(); setRunning(!isRunning) }}
               className="relative flex items-center justify-center rounded-2xl text-white transition-all duration-200 active:scale-95"
               style={{
                 width: 88, height: 88,
