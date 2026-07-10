@@ -1,25 +1,34 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FALLBACK_HOLIDAYS_2026 } from '@/lib/holidays'
+import { generateYearHolidays } from '@/lib/holidays'
 
 type HolidayMap = Record<string, string>
 
-// 세션 내 연도별 캐시 — API 응답 후 덮어씀
-// API 미응답 시 폴백 데이터(2026)를 기본값으로 사용
-const cache: Record<number, HolidayMap> = {
-  2026: FALLBACK_HOLIDAYS_2026,
+// 공공데이터포털 API가 반환하지 않는 날 (제헌절 등) 을 API 응답에 추가
+function withNationalDays(year: number, map: HolidayMap): HolidayMap {
+  const result = { ...map }
+  const key = `${year}-07-17`
+  if (!result[key]) result[key] = '제헌절'
+  return result
 }
-// 이미 API 요청을 보낸 연도 — 중복 요청 방지
+
+// 세션 내 연도별 캐시 — API 응답이 오면 덮어씀
+const cache: Record<number, HolidayMap> = {}
+
+function getFallback(year: number): HolidayMap {
+  if (!cache[year]) cache[year] = generateYearHolidays(year)
+  return cache[year]
+}
+
 const fetched = new Set<number>()
 
 export function useHolidays(year: number): HolidayMap {
-  const [holidays, setHolidays] = useState<HolidayMap>(cache[year] ?? {})
+  const [holidays, setHolidays] = useState<HolidayMap>(() => getFallback(year))
 
   useEffect(() => {
-    // 이미 API 응답을 받은 연도는 재요청 안 함
     if (fetched.has(year)) {
-      setHolidays(cache[year] ?? {})
+      setHolidays(cache[year] ?? getFallback(year))
       return
     }
 
@@ -30,12 +39,12 @@ export function useHolidays(year: number): HolidayMap {
         return r.json() as Promise<HolidayMap>
       })
       .then((data) => {
-        if ('error' in data) return  // API 키 미설정 등 → 폴백 유지
-        cache[year] = data
-        setHolidays(data)
+        if ('error' in data) return  // API 키 미설정 → 폴백 유지
+        const merged = withNationalDays(year, data)
+        cache[year] = merged
+        setHolidays(merged)
       })
       .catch(() => {
-        // 네트워크 오류 → 폴백 유지, 다음 마운트 때 재시도 가능하도록 fetched에서 제거
         fetched.delete(year)
       })
   }, [year])

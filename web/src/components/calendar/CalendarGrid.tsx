@@ -5,7 +5,7 @@ import { toDateStr, todayStr, getDateRange } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
 
 const WEEKDAYS        = ['일', '월', '화', '수', '목', '금', '토']
-const MAX_EVENTS_DESKTOP = 3
+const MAX_EVENTS_DESKTOP = 4
 const MAX_EVENTS_MOBILE  = 4
 
 type Props = {
