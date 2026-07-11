@@ -1,4 +1,4 @@
-'use client'
+ 'use client'
 
 // 캘린더 페이지 — 월간/주간/일간 뷰 전환 가능
 import { useState, useMemo } from 'react'
@@ -13,7 +13,7 @@ import { useCalendarStore } from '@/store/calendarStore'
 import { useTodoStore } from '@/store/todoStore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { useHolidays } from '@/hooks/useHolidays'
-import { toDateStr } from '@/lib/date'
+import { toDateStr, dateFromStr } from '@/lib/date'
 import { CATEGORIES } from '@/lib/categories'
 import type { CalendarEvent } from '@/types'
 import { MONTH_NAMES } from '@/constants/calendar'
@@ -219,8 +219,8 @@ export default function CalendarPage() {
             if (!ev) return
             if (ev.endDate && ev.endDate >= ev.date) {
               // 다중 날짜 일정 — 기간 유지하면서 날짜만 이동 (duration은 항상 양수)
-              const duration = Math.max(0, new Date(ev.endDate).getTime() - new Date(ev.date).getTime())
-              const newEndDate = new Date(new Date(newDate).getTime() + duration)
+              const duration = Math.max(0, dateFromStr(ev.endDate).getTime() - dateFromStr(ev.date).getTime())
+              const newEndDate = new Date(dateFromStr(newDate).getTime() + duration)
               updateEvent(eventId, {
                 date: newDate,
                 endDate: toDateStr(newEndDate.getFullYear(), newEndDate.getMonth(), newEndDate.getDate()),

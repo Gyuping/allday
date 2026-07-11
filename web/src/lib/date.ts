@@ -24,8 +24,8 @@ export function todayStr(): string {
 // start부터 end까지 모든 날짜를 배열로 반환 (양 끝 포함)
 // start > end여도 자동으로 순서를 바로잡아 처리한다.
 export function getDateRange(start: string, end: string): string[] {
-  const s = new Date(start)
-  const e = new Date(end)
+  const s = dateFromStr(start)
+  const e = dateFromStr(end)
   if (isNaN(s.getTime()) || isNaN(e.getTime())) return []
   const [from, to] = s <= e ? [s, e] : [e, s]
   const dates: string[] = []
@@ -39,6 +39,12 @@ export function getDateRange(start: string, end: string): string[] {
     count++
   }
   return dates
+}
+
+// 'YYYY-MM-DD' 문자열을 Date 객체로 변환 (Safari 안전 — new Date(string) 직접 사용 금지)
+export function dateFromStr(dateStr: string): Date {
+  const { year, month, day } = parseDateStr(dateStr)
+  return new Date(year, month - 1, day)
 }
 
 // 특정 날짜(dateStr)에 해당하는 이벤트만 필터링
