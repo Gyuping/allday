@@ -28,19 +28,18 @@ export default function CalendarGrid({
   const today = todayStr()
 
   // ── 시각적 피드백용 state ──
-  const [draggingId,  setDraggingId]  = useState<string | null>(null)
+  const [draggingId,   setDraggingId]  = useState<string | null>(null)
   const [dropOverDate, setDropOverDate] = useState<string | null>(null)
 
-  // ── 드래그 핵심 로직용 ref (stale closure 없이 항상 최신값) ──
+  // ── 드래그 핵심 로직용 ref ──
   const drag = useRef<{ eventId: string; dropDate: string | null } | null>(null)
 
   // ── 날짜 범위 선택용 ref / state ──
   const [selStart,   setSelStart]   = useState<string | null>(null)
   const [selCurrent, setSelCurrent] = useState<string | null>(null)
-  const isSelecting  = useRef(false)
-  const didDrag      = useRef(false)
-  // selStart/selCurrent를 ref로도 미러링 — [] 의존성 effect에서 최신값 읽기 위해
-  const selStartRef  = useRef<string | null>(null)
+  const isSelecting   = useRef(false)
+  const didDrag       = useRef(false)
+  const selStartRef   = useRef<string | null>(null)
   const selCurrentRef = useRef<string | null>(null)
 
   // 콜백 ref — useEffect 의존성 없이 항상 최신 콜백을 사용
@@ -54,25 +53,43 @@ export default function CalendarGrid({
     return new Set(getDateRange(selStart, selCurrent))
   }, [selStart, selCurrent])
 
-  // ── window 이벤트 — 마운트 시 한 번만 등록 ──
+  // ── window 포인터 이벤트 — 마우스/터치/펜 통합 ──
   useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (!drag.current) return
-
-      // 모든 칩이 pointer-events:none 상태 → elementFromPoint가 셀을 반환
-      const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null
+    // clientX/Y 기준으로 data-date 속성을 가진 셀 탐색
+    const dateAtPoint = (x: number, y: number): string | null => {
+      const el = document.elementFromPoint(x, y) as HTMLElement | null
       let node = el
       while (node && !node.dataset?.date) node = node.parentElement as HTMLElement | null
-      const date = node?.dataset?.date ?? null
+      return node?.dataset?.date ?? null
+    }
 
-      if (date !== drag.current.dropDate) {
-        drag.current.dropDate = date
-        setDropOverDate(date)
+    const onPointerMove = (e: PointerEvent) => {
+      if (!e.isPrimary) return
+
+      // 이벤트 드래그 중
+      if (drag.current) {
+        const date = dateAtPoint(e.clientX, e.clientY)
+        if (date !== drag.current.dropDate) {
+          drag.current.dropDate = date
+          setDropOverDate(date)
+        }
+        return
+      }
+
+      // 날짜 범위 선택 중 — onMouseEnter 대신 pointermove+elementFromPoint 사용 (터치 지원)
+      if (!isSelecting.current) return
+      const date = dateAtPoint(e.clientX, e.clientY)
+      if (date && date !== selCurrentRef.current) {
+        didDrag.current       = true
+        selCurrentRef.current = date
+        setSelCurrent(date)
       }
     }
 
-    const onMouseUp = () => {
-      // ── 이벤트 드래그 완료 ──
+    const onPointerUp = (e: PointerEvent) => {
+      if (!e.isPrimary) return
+
+      // 이벤트 드래그 완료
       if (drag.current) {
         const { eventId, dropDate } = drag.current
         drag.current = null
@@ -82,15 +99,14 @@ export default function CalendarGrid({
         return
       }
 
-      // ── 날짜 범위 선택 완료 ──
+      // 날짜 범위 선택 완료
       if (!isSelecting.current) return
-      // ref에서 읽어야 최신값 (stale closure 방지)
       const start   = selStartRef.current
       const current = selCurrentRef.current
       const wasDrag = didDrag.current
-      isSelecting.current = false
-      didDrag.current     = false
-      selStartRef.current  = null
+      isSelecting.current   = false
+      didDrag.current       = false
+      selStartRef.current   = null
       selCurrentRef.current = null
       setSelStart(null)
       setSelCurrent(null)
@@ -103,15 +119,14 @@ export default function CalendarGrid({
       }
     }
 
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup',   onMouseUp)
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerup',   onPointerUp)
     return () => {
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup',   onMouseUp)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup',   onPointerUp)
     }
   }, [])
 
-  // selStart/selCurrent 변경 직후 ref에 동기화 (mouseup handler에서 최신값 읽기 위해)
   useLayoutEffect(() => {
     selStartRef.current   = selStart
     selCurrentRef.current = selCurrent
@@ -137,9 +152,8 @@ export default function CalendarGrid({
     [events]
   )
 
-  // 주(week) 단위 이벤트 슬롯 — 같은 주 안에서 이벤트가 항상 같은 행에 표시되도록 순서를 고정
   const weekEventSlots = useMemo(() => {
-    const slotMap = new Map<string, number>() // `${weekIdx}-${eventId}` → slot
+    const slotMap = new Map<string, number>()
     const totalWeeks = Math.ceil(cells.length / 7)
     for (let w = 0; w < totalWeeks; w++) {
       const weekDates = cells
@@ -147,7 +161,6 @@ export default function CalendarGrid({
         .flatMap((day) => (day !== null ? [toDateStr(year, month, day)] : []))
       const seen = new Map<string, CalendarEvent>()
       weekDates.forEach((d) => (eventsByDate[d] ?? []).forEach((ev) => seen.set(ev.id, ev)))
-      // 다중날짜 우선, 그 다음 시작일 오름차순, 그 다음 종료일 내림차순(긴 일정 우선)
       const sorted = [...seen.values()].sort((a, b) => {
         const aM = !!a.endDate, bM = !!b.endDate
         if (aM !== bM) return aM ? -1 : 1
@@ -177,31 +190,27 @@ export default function CalendarGrid({
             <div key={`empty-${idx}`} className="border-r border-b border-neutral-700 min-h-20 md:min-h-24 bg-neutral-950" />
           )
 
-          const dateStr       = toDateStr(year, month, day)
-          const isToday       = dateStr === today
-          const isSelected    = selectedSet.has(dateStr)
-          const isDropOver    = dropOverDate === dateStr
-          const colIdx        = idx % 7
-          const isSun         = colIdx === 0
-          const isSat         = colIdx === 6
-          const holidayName   = holidays[dateStr]
+          const dateStr        = toDateStr(year, month, day)
+          const isToday        = dateStr === today
+          const isSelected     = selectedSet.has(dateStr)
+          const isDropOver     = dropOverDate === dateStr
+          const colIdx         = idx % 7
+          const isSun          = colIdx === 0
+          const isSat          = colIdx === 6
+          const holidayName    = holidays[dateStr]
           const isHolidayColor = isSun || isSat || !!holidayName
+          const weekIdx        = Math.floor(idx / 7)
 
-          const weekIdx = Math.floor(idx / 7)
-
-          // 이 날에 있는 이벤트를 슬롯 번호로 매핑
           const slotToEv = new Map<number, CalendarEvent>()
           ;(eventsByDate[dateStr] ?? []).forEach((ev) => {
             const s = weekEventSlots.get(`${weekIdx}-${ev.id}`)
             if (s !== undefined && s < MAX_EVENTS_DESKTOP) slotToEv.set(s, ev)
           })
-          // 이 날의 최고 슬롯 번호까지 배열 생성 (빈 슬롯은 null → 투명 공간으로 렌더)
           const maxSlot = slotToEv.size > 0 ? Math.max(...slotToEv.keys()) : -1
           const slots: (CalendarEvent | null)[] = Array.from(
             { length: maxSlot + 1 }, (_, i) => slotToEv.get(i) ?? null
           )
           const hiddenCount = (eventsByDate[dateStr] ?? []).length - slotToEv.size
-          // 모바일 도트용 (슬롯 순서 유지)
           const dayEvents = [...(eventsByDate[dateStr] ?? [])].sort((a, b) => {
             const sA = weekEventSlots.get(`${weekIdx}-${a.id}`) ?? 999
             const sB = weekEventSlots.get(`${weekIdx}-${b.id}`) ?? 999
@@ -212,8 +221,8 @@ export default function CalendarGrid({
             <div
               key={dateStr}
               data-date={dateStr}
-              onMouseDown={(e) => {
-                if (e.button !== 0) return
+              onPointerDown={(e) => {
+                if (!e.isPrimary) return
                 if ((e.target as HTMLElement).closest('[data-event-chip]')) return
                 e.preventDefault()
                 isSelecting.current   = true
@@ -223,15 +232,8 @@ export default function CalendarGrid({
                 setSelStart(dateStr)
                 setSelCurrent(dateStr)
               }}
-              onMouseEnter={() => {
-                if (drag.current) return
-                if (!isSelecting.current) return
-                if (selCurrentRef.current !== dateStr) didDrag.current = true
-                selCurrentRef.current = dateStr
-                setSelCurrent(dateStr)
-              }}
               className={`border-r border-b border-neutral-700 min-h-20 md:min-h-24 p-1 cursor-pointer bg-neutral-900 transition-colors group relative ${
-                isSelected  ? 'bg-indigo-500/20 ring-1 ring-inset ring-indigo-500/50'
+                isSelected   ? 'bg-indigo-500/20 ring-1 ring-inset ring-indigo-500/50'
                 : isDropOver ? 'bg-blue-500/20 ring-2 ring-inset ring-blue-400 z-[5]'
                 : 'hover:bg-neutral-800/60'
               }`}
@@ -249,7 +251,7 @@ export default function CalendarGrid({
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-80" />
                   )}
                   <span
-                    onMouseDown={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onDayDoubleClick(dateStr) }}
                     className={`text-sm w-7 h-7 md:text-base md:w-8 md:h-8 flex items-center justify-center rounded-full font-semibold transition-colors cursor-pointer hover:ring-2 hover:ring-white/30 ${
                       isToday ? 'bg-white text-neutral-900'
@@ -263,7 +265,6 @@ export default function CalendarGrid({
               <div className="flex flex-col gap-0.5">
                 {slots.map((ev, slotIdx) => {
                   if (ev === null) {
-                    // 빈 슬롯 — chip과 동일한 높이로 다음 이벤트 위치 유지
                     return <div key={`spacer-${slotIdx}`} className="block text-[11px] leading-4 py-0.5 min-h-[18px] pointer-events-none">&nbsp;</div>
                   }
                   const isMulti    = !!ev.endDate
@@ -271,7 +272,6 @@ export default function CalendarGrid({
                   const isSegEnd   = !isMulti || ev.endDate === dateStr || colIdx === 6
                   const isDragging = draggingId === ev.id
 
-                  // 셀 패딩(4px) + 우측 border(1px) = 5px를 width calc()로 확장 → 셀 경계에서 바가 끊기지 않음
                   let barClasses: string
                   if (!isMulti || (isSegStart && isSegEnd)) barClasses = 'rounded-[4px] px-1.5'
                   else if (isSegStart) barClasses = 'rounded-l-[4px] rounded-r-none pl-1.5 pr-0 w-[calc(100%+5px)]'
@@ -284,9 +284,10 @@ export default function CalendarGrid({
                     <div
                       key={ev.id}
                       data-event-chip="true"
-                      onMouseDown={(e) => {
-                        if (e.button !== 0) return
+                      onPointerDown={(e) => {
+                        if (!e.isPrimary) return
                         e.stopPropagation()
+                        ;(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
                         drag.current = { eventId: ev.id, dropDate: null }
                         setDraggingId(ev.id)
                       }}
@@ -319,7 +320,7 @@ export default function CalendarGrid({
                     {dayEvents.slice(0, MAX_EVENTS_MOBILE).map((ev) => (
                       <div
                         key={ev.id}
-                        onMouseDown={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
                         onClick={(e) => { e.stopPropagation(); onEventClick(ev) }}
                         className="w-1.5 h-1.5 rounded-full shrink-0 cursor-pointer"
                         style={{ backgroundColor: ev.color ?? '#6366f1' }}
