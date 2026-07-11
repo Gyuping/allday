@@ -112,7 +112,7 @@ export default function EventForm({
       </div>
 
       <div className="flex gap-3">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <label className="text-xs text-neutral-400 mb-1.5 block">시작 시간</label>
           <input
             type="time"
@@ -121,7 +121,7 @@ export default function EventForm({
             className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-neutral-500 transition-colors [color-scheme:dark]"
           />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <label className="text-xs text-neutral-400 mb-1.5 block">종료 시간</label>
           <input
             type="time"
