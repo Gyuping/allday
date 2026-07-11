@@ -29,3 +29,10 @@
 | 2026-06-26 | `components/calendar/DayDetailModal.tsx` | `Promise.all` 사용 시 일부 실패하면 전체 중단 | 🟡 보통 | 해결완료 | `Promise.allSettled`로 변경 |
 | 2026-06-26 | `hooks/useEventReminders.ts` | 매 렌더마다 정규식 재컴파일 | 🟢 낮음 | 해결완료 | `TIME_REGEX` 모듈 상수로 추출 |
 | 2026-06-26 | `store/todoStore.ts` | 전체 삭제 시 완료 항목도 삭제됨 | 🟡 보통 | 해결완료 | 미완료 항목만 삭제하도록 수정 |
+| 2026-07-11 | `components/todo/TodoItem.tsx` | 터치 기기에서 삭제 버튼이 hover-only라 보이지 않아 삭제 불가 | 🔴 심각 | 해결완료 | `[@media(hover:none)]:opacity-100` 추가, 수정/삭제 버튼을 함께 그룹으로 묶음 |
+| 2026-07-11 | `components/todo/TodoItem.tsx` | 모바일에서 더블탭이 브라우저 확대로 처리 → 수정 진입 불가 | 🔴 심각 | 해결완료 | Pencil 아이콘 수정 버튼 추가 (터치에서도 항상 표시) |
+| 2026-07-11 | `store/pomodoroStore.ts` | `sessionCount`가 persist되지 않아 새로고침 시 세션 카운터 초기화 → 긴 휴식 타이밍 틀어짐 | 🟡 보통 | 해결완료 | `partialize`에 `sessionCount` 추가 |
+| 2026-07-11 | `store/todoStore.ts` | `resetExpiredCompleted` Firestore 실패 시 로컬 상태 롤백 없음 → 서버/클라 불일치 | 🟡 보통 | 해결완료 | catch 블록에 원본 아이템 복원 롤백 추가 |
+| 2026-07-11 | `store/todoStore.ts` | `clearAll` Firestore 실패 시 에러 토스트 없음 | 🟢 낮음 | 해결완료 | catch 블록에 `toast.error` 추가 |
+| 2026-07-11 | `components/todo/EditTodoModal.tsx` | `onSave`(async)를 await하지 않아 실패해도 모달이 닫힘 | 🟡 보통 | 해결완료 | `handleSubmit` async화, `onSave` await 처리 |
+| 2026-07-11 | `lib/firestore/todos.ts` | `clearAllTodos`가 Firestore 배치 한도 500개 초과 시 에러 | 🟡 보통 | 해결완료 | 500개 단위 청크로 분할 커밋 |

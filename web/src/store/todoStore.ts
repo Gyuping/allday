@@ -100,6 +100,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await fsClear(userId, toDelete.map((t) => t.id))
     } catch {
       set({ todos })
+      toast.error('삭제에 실패했어요.')
     }
   },
 
@@ -114,7 +115,13 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
     try {
       await Promise.all(expired.map((t) => fsUpdate(userId, t.id, { completed: false })))
     } catch {
-      // 실패해도 다음 앱 실행 시 재시도
+      // Firestore 실패 시 낙관적 업데이트 롤백
+      set((s) => ({
+        todos: s.todos.map((t) => {
+          const orig = expired.find((e) => e.id === t.id)
+          return orig ? orig : t
+        }),
+      }))
     }
   },
 }))

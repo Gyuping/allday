@@ -10,7 +10,7 @@ import Modal from '@/components/ui/Modal'
 
 type Props = {
   todo: Todo
-  onSave: (updated: Partial<Todo>) => void
+  onSave: (updated: Partial<Todo>) => void | Promise<void>
   onClose: () => void
 }
 
@@ -23,10 +23,10 @@ export default function EditTodoModal({ todo, onSave, onClose }: Props) {
 
   useEffect(() => { titleRef.current?.focus() }, [])
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    onSave({ title: title.trim(), priority, dueDate: dueDate || undefined, tags: tags.length > 0 ? tags : undefined })
+    await onSave({ title: title.trim(), priority, dueDate: dueDate || undefined, tags: tags.length > 0 ? tags : undefined })
     onClose()
   }
 

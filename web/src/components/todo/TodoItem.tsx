@@ -1,10 +1,6 @@
 'use client'
 
-// 할일 목록에서 아이템 하나를 표시하는 컴포넌트
-// - 더블클릭: 수정 모달 열기
-// - 체크박스 클릭: 완료 토글
-// - 삭제 버튼: 마우스를 올릴 때만 나타남
-import { Trash2 } from 'lucide-react'
+import { Trash2, Pencil } from 'lucide-react'
 import type { Todo } from '@/types'
 import { PRIORITY_CONFIG } from '@/lib/priorities'
 import CheckIcon from '@/components/ui/CheckIcon'
@@ -25,7 +21,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: Props) {
 
   return (
     <div
-      onDoubleClick={() => !todo.completed && onEdit()}  // 완료된 항목은 더블클릭 비활성화
+      onDoubleClick={() => !todo.completed && onEdit()}
       className={`group flex items-start gap-3 bg-neutral-900 border rounded-xl px-4 py-3.5 transition-colors cursor-default ${
         todo.completed ? 'border-neutral-800/60 opacity-60' : 'border-neutral-800 hover:border-neutral-700'
       }`}
@@ -61,13 +57,23 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: Props) {
         </div>
       </div>
 
-      {/* 삭제 버튼 — 기본적으로 숨겨져 있다가 hover 시 나타남 */}
-      <button
-        onClick={onDelete}
-        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-neutral-600 hover:text-red-400 hover:bg-neutral-800 transition-all shrink-0"
-      >
-        <Trash2 size={15} />
-      </button>
+      {/* 액션 버튼 — 마우스 기기: hover 시 표시 / 터치 기기: 항상 표시 */}
+      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 shrink-0 transition-opacity">
+        {!todo.completed && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit() }}
+            className="p-1.5 rounded-lg text-neutral-600 hover:text-blue-400 hover:bg-neutral-800 transition-colors"
+          >
+            <Pencil size={14} />
+          </button>
+        )}
+        <button
+          onClick={onDelete}
+          className="p-1.5 rounded-lg text-neutral-600 hover:text-red-400 hover:bg-neutral-800 transition-colors"
+        >
+          <Trash2 size={15} />
+        </button>
+      </div>
     </div>
   )
 }

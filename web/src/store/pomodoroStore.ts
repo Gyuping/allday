@@ -57,7 +57,7 @@ export const usePomodoroStore = create<PomodoroStore>()(
     }),
     {
       name: 'allay-pomodoro',
-      partialize: (s) => ({ settings: s.settings }),
+      partialize: (s) => ({ settings: s.settings, sessionCount: s.sessionCount }),
     }
   )
 )

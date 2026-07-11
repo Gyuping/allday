@@ -51,7 +51,10 @@ export const deleteTodo = (userId: string, id: string) =>
 
 export async function clearAllTodos(userId: string, ids: string[]) {
   if (ids.length === 0) return
-  const batch = writeBatch(db)
-  ids.forEach((id) => batch.delete(ref(userId, id)))
-  await batch.commit()
+  // Firestore writeBatch 한도 500개 → 청크 분할
+  for (let i = 0; i < ids.length; i += 500) {
+    const batch = writeBatch(db)
+    ids.slice(i, i + 500).forEach((id) => batch.delete(ref(userId, id)))
+    await batch.commit()
+  }
 }
