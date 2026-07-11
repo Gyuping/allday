@@ -1,25 +1,60 @@
 'use client'
 
-// 네이티브 <input type="time">은 플랫폼마다 UI가 달라 select 기반으로 대체
-// Windows: 시계 아이콘 + 드롭다운 / Mac Safari: 아이콘 없음 + 터치 이슈
+import { ChevronDown } from 'lucide-react'
+
 const HOURS   = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
 const MINUTES = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']
-
-const SELECT_CLS = 'flex-1 min-w-0 bg-neutral-800 text-sm text-white py-2.5 outline-none cursor-pointer [color-scheme:dark]'
 
 type Props = {
   value: string   // "HH:MM" 또는 ""
   onChange: (v: string) => void
 }
 
+type SelectProps = {
+  value: string
+  options: { value: string; label: string }[]
+  placeholder: string
+  onChange: (v: string) => void
+  side: 'left' | 'right'
+}
+
+function TimeSelect({ value, options, placeholder, onChange, side }: SelectProps) {
+  return (
+    <div className="relative flex-1 min-w-0">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full appearance-none bg-transparent text-sm text-white py-2.5 pr-6 outline-none cursor-pointer ${
+          side === 'left' ? 'pl-3' : 'pl-2'
+        } ${!value ? 'text-neutral-500' : 'text-white'}`}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      <ChevronDown
+        size={13}
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500 shrink-0"
+      />
+    </div>
+  )
+}
+
 export default function TimeInput({ value, onChange }: Props) {
   const h = value ? value.split(':')[0] : ''
   const m = value ? value.split(':')[1] : ''
 
-  // 기존에 저장된 분 값이 5분 단위가 아닐 경우 목록에 추가
-  const minuteOptions = m && !MINUTES.includes(m)
-    ? [...MINUTES, m].sort((a, b) => Number(a) - Number(b))
-    : MINUTES
+  const minuteOptions = (() => {
+    const opts = MINUTES.map((min) => ({ value: min, label: `${Number(min)}분` }))
+    if (m && !MINUTES.includes(m)) {
+      opts.push({ value: m, label: `${Number(m)}분` })
+      opts.sort((a, b) => Number(a.value) - Number(b.value))
+    }
+    return opts
+  })()
+
+  const hourOptions = HOURS.map((hr) => ({ value: hr, label: `${Number(hr)}시` }))
 
   const handleHour = (newH: string) => {
     if (!newH) { onChange(''); return }
@@ -33,27 +68,21 @@ export default function TimeInput({ value, onChange }: Props) {
 
   return (
     <div className="flex items-center w-full bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden transition-colors focus-within:border-neutral-500">
-      <select
+      <TimeSelect
         value={h}
-        onChange={(e) => handleHour(e.target.value)}
-        className={`${SELECT_CLS} pl-3 pr-1`}
-      >
-        <option value="">--시</option>
-        {HOURS.map((hr) => (
-          <option key={hr} value={hr}>{Number(hr)}시</option>
-        ))}
-      </select>
-      <span className="text-neutral-600 text-sm select-none shrink-0 px-0.5">:</span>
-      <select
+        options={hourOptions}
+        placeholder="--시"
+        onChange={handleHour}
+        side="left"
+      />
+      <span className="text-neutral-700 text-sm select-none shrink-0">:</span>
+      <TimeSelect
         value={m}
-        onChange={(e) => handleMinute(e.target.value)}
-        className={`${SELECT_CLS} pl-1 pr-3`}
-      >
-        <option value="">--분</option>
-        {minuteOptions.map((min) => (
-          <option key={min} value={min}>{Number(min)}분</option>
-        ))}
-      </select>
+        options={minuteOptions}
+        placeholder="--분"
+        onChange={handleMinute}
+        side="right"
+      />
     </div>
   )
 }
