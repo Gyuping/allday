@@ -86,20 +86,24 @@ export default function CalendarGrid({
       }
     }
 
-    const onPointerUp = (e: PointerEvent) => {
+    // pointerup + pointercancel 통합 처리
+    // iOS Safari는 터치를 취소할 때 pointerup 대신 pointercancel을 발생시킴
+    const onPointerEnd = (e: PointerEvent) => {
       if (!e.isPrimary) return
 
-      // 이벤트 드래그 완료
+      // 이벤트 드래그 완료 (pointercancel 시엔 드롭 미적용)
       if (drag.current) {
         const { eventId, dropDate } = drag.current
         drag.current = null
         setDraggingId(null)
         setDropOverDate(null)
-        if (eventId && dropDate) cbRef.current.onEventDrop(eventId, dropDate)
+        if (e.type === 'pointerup' && eventId && dropDate) {
+          cbRef.current.onEventDrop(eventId, dropDate)
+        }
         return
       }
 
-      // 날짜 범위 선택 완료
+      // 날짜 범위 선택 완료 — pointercancel이어도 드래그가 있었으면 모달 표시
       if (!isSelecting.current) return
       const start   = selStartRef.current
       const current = selCurrentRef.current
@@ -113,17 +117,19 @@ export default function CalendarGrid({
 
       if (!start || !current) return
       if (start === current && !wasDrag) {
-        cbRef.current.onDayClick(start)
+        if (e.type === 'pointerup') cbRef.current.onDayClick(start)
       } else {
         cbRef.current.onRangeSelect(start, current)
       }
     }
 
-    window.addEventListener('pointermove', onPointerMove)
-    window.addEventListener('pointerup',   onPointerUp)
+    window.addEventListener('pointermove',  onPointerMove)
+    window.addEventListener('pointerup',    onPointerEnd)
+    window.addEventListener('pointercancel', onPointerEnd)
     return () => {
-      window.removeEventListener('pointermove', onPointerMove)
-      window.removeEventListener('pointerup',   onPointerUp)
+      window.removeEventListener('pointermove',  onPointerMove)
+      window.removeEventListener('pointerup',    onPointerEnd)
+      window.removeEventListener('pointercancel', onPointerEnd)
     }
   }, [])
 
