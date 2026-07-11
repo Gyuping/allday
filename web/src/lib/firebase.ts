@@ -23,7 +23,5 @@ if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
   _db   = getFirestore(_app)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const auth = _auth!
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const db   = _db!

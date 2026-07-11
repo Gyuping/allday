@@ -4,7 +4,7 @@
 // - 한 번 클릭: 색상 선택
 // - 더블클릭: 해당 색상에 이름을 붙일 수 있는 입력창 표시 (예: '병원', '회사')
 // 라벨은 colorLabelStore에 영구 저장되며 색상 아래 작은 글씨로 표시된다.
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { PRESET_COLORS } from '@/lib/colors'
 import { useColorLabelStore } from '@/store/colorLabelStore'
 
@@ -19,17 +19,11 @@ export default function ColorPicker({ value, onChange }: Props) {
   const [draft, setDraft] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // 편집 모드 진입 시 기존 라벨을 input에 채워넣고 포커스
-  useEffect(() => {
-    if (editing) {
-      setDraft(labels[editing] ?? '')
-      setTimeout(() => inputRef.current?.focus(), 0)
-    }
-  }, [editing, labels])
-
   const handleDoubleClick = useCallback((color: string) => {
+    setDraft(labels[color] ?? '')
     setEditing(color)
-  }, [])
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }, [labels])
 
   // 라벨 저장 — 빈 문자열도 저장 가능 (라벨 제거 효과)
   const handleLabelSave = useCallback(() => {

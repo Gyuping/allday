@@ -65,6 +65,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       try { unsubTodos() }    catch { /* 무시 */ }
       if (midnightTimer.current) clearTimeout(midnightTimer.current)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   return <>{children}</>

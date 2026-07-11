@@ -193,7 +193,7 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
           <div
             ref={colRef}
             className="flex-1 border-l border-neutral-800 relative select-none"
-            style={{ cursor: drag.current ? 'ns-resize' : 'crosshair' }}
+            style={{ cursor: dragPreview ? 'ns-resize' : 'crosshair' }}
             onPointerDown={(e) => {
               if (!e.isPrimary) return
               if ((e.target as HTMLElement).closest('[data-event]')) return

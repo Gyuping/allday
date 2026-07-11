@@ -4,7 +4,7 @@
 // 각 섹션에서 클릭/완료 처리도 바로 가능하다.
 import { useMemo } from 'react'
 import Link from 'next/link'
-import { CalendarDays, CheckSquare, Timer, ChevronRight, Circle, CheckCircle2 } from 'lucide-react'
+import { CalendarDays, CheckSquare, Timer, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/calendarStore'
 import { useTodoStore } from '@/store/todoStore'
 import { usePomodoroStore } from '@/store/pomodoroStore'

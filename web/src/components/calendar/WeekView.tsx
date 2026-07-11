@@ -233,7 +233,7 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
                 key={dateStr}
                 ref={(el) => { colRefs.current[colIdx] = el }}
                 className="flex-1 border-l border-neutral-800 relative select-none"
-                style={{ cursor: drag.current ? 'ns-resize' : 'crosshair' }}
+                style={{ cursor: dragPreview ? 'ns-resize' : 'crosshair' }}
                 onPointerDown={(e) => handlePointerDown(dateStr, colIdx, e)}
               >
                 {/* 시간 구분선 */}

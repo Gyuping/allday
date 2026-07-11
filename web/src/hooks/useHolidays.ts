@@ -28,6 +28,7 @@ export function useHolidays(year: number): HolidayMap {
 
   useEffect(() => {
     if (fetched.has(year)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHolidays(cache[year] ?? getFallback(year))
       return
     }

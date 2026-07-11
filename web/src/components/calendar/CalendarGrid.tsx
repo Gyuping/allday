@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react'
 import { toDateStr, todayStr, getDateRange } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
 
@@ -45,7 +45,9 @@ export default function CalendarGrid({
 
   // 콜백 ref — useEffect 의존성 없이 항상 최신 콜백을 사용
   const cbRef = useRef({ onDayClick, onDayDoubleClick, onEventDrop, onRangeSelect })
-  cbRef.current = { onDayClick, onDayDoubleClick, onEventDrop, onRangeSelect }
+  useLayoutEffect(() => {
+    cbRef.current = { onDayClick, onDayDoubleClick, onEventDrop, onRangeSelect }
+  })
 
   const selectedSet = useMemo(() => {
     if (!selStart || !selCurrent) return new Set<string>()
@@ -107,22 +109,24 @@ export default function CalendarGrid({
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('mouseup',   onMouseUp)
     }
-  // 의존성 없음 — cbRef로 최신 콜백 참조, drag ref로 최신 상태 참조
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // render 본문에서 ref 동기화 — mousedown에서도 직접 업데이트하므로 안전
-  // (mousedown → setState → re-render 시 ref도 최신값으로 갱신됨)
-  selStartRef.current   = selStart
-  selCurrentRef.current = selCurrent
+  // selStart/selCurrent 변경 직후 ref에 동기화 (mouseup handler에서 최신값 읽기 위해)
+  useLayoutEffect(() => {
+    selStartRef.current   = selStart
+    selCurrentRef.current = selCurrent
+  }, [selStart, selCurrent])
 
-  const firstDayOfWeek = new Date(year, month, 1).getDay()
-  const daysInMonth    = new Date(year, month + 1, 0).getDate()
-  const cells: (number | null)[] = [
-    ...Array<null>(firstDayOfWeek).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ]
-  while (cells.length % 7 !== 0) cells.push(null)
+  const cells = useMemo(() => {
+    const firstDayOfWeek = new Date(year, month, 1).getDay()
+    const daysInMonth    = new Date(year, month + 1, 0).getDate()
+    const result: (number | null)[] = [
+      ...Array<null>(firstDayOfWeek).fill(null),
+      ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    ]
+    while (result.length % 7 !== 0) result.push(null)
+    return result
+  }, [year, month])
 
   const eventsByDate = useMemo(() =>
     events.reduce<Record<string, CalendarEvent[]>>((acc, e) => {

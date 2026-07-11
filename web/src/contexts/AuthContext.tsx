@@ -21,16 +21,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!auth) { setLoading(false); return }
 
-    // 리다이렉트 로그인 완료 처리 (Safari/아이패드 팝업 차단 시)
-    getRedirectResult(auth).catch(() => {})
+    let unsubscribe: (() => void) | undefined
 
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u)
-      setLoading(false)
-    })
-    return unsubscribe
+    // getRedirectResult 완료 후 onAuthStateChanged 구독
+    // — 먼저 구독하면 리다이렉트 결과 처리 전에 user:null이 와서 로그인 화면이 깜빡임
+    getRedirectResult(auth)
+      .then((result) => { if (result?.user) setUser(result.user) })
+      .catch(() => {})
+      .finally(() => {
+        unsubscribe = onAuthStateChanged(auth, (u) => {
+          setUser(u)
+          setLoading(false)
+        })
+      })
+
+    return () => { unsubscribe?.() }
   }, [])
 
   const signInWithGoogle = async () => {

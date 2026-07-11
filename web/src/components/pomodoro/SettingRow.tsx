@@ -2,7 +2,7 @@
 
 // 포모도로 설정 모달의 한 행 — 레이블 + (-/+) 버튼 + 값 표시
 // 더블클릭하면 직접 숫자를 입력할 수 있다.
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 
 // 분 단위 숫자를 '1시간 30분' 같은 형태로 변환
 function toDisplay(minutes: number) {
@@ -36,16 +36,14 @@ export default function SettingRow({ label, unit, value, min, max, onChange }: {
   const [error, setError] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // 더블클릭해서 편집 모드에 진입하면 현재 값을 시:분 형식으로 채워준다.
-  useEffect(() => {
-    if (editing) {
-      const h = Math.floor(value / 60)
-      const m = value % 60
-      setDraft(h > 0 ? `${h}:${String(m).padStart(2, '0')}` : String(value))
-      setError(false)
-      setTimeout(() => inputRef.current?.select(), 0)  // 텍스트를 전체 선택해 바로 덮어쓸 수 있게
-    }
-  }, [editing, value])
+  function openEditor() {
+    const h = Math.floor(value / 60)
+    const m = value % 60
+    setDraft(h > 0 ? `${h}:${String(m).padStart(2, '0')}` : String(value))
+    setError(false)
+    setEditing(true)
+    setTimeout(() => inputRef.current?.select(), 0)
+  }
 
   // 입력 완료 시 호출 — 파싱 실패하면 빨간 배경으로 표시 후 닫힘
   function commit() {
@@ -90,7 +88,7 @@ export default function SettingRow({ label, unit, value, min, max, onChange }: {
             />
           ) : (
             <span
-              onClick={() => setEditing(true)}
+              onClick={openEditor}
               title="클릭으로 직접 입력 (예: 90 또는 1:30)"
               className="w-24 text-center text-sm font-semibold tabular-nums cursor-text hover:text-white transition-colors select-none"
             >
