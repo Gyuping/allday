@@ -9,6 +9,7 @@ import ColorPicker from './ColorPicker'
 import { PRESET_COLORS } from '@/lib/colors'
 import { REMINDER_OPTIONS } from '@/constants/reminders'
 import { useNotificationPermission } from '@/hooks/useNotificationPermission'
+import TimeInput from '@/components/ui/TimeInput'
 
 type Props = {
   startDate: string
@@ -93,21 +94,11 @@ export default function RangeAddModal({ startDate, endDate, onClose }: Props) {
             <div className="flex gap-3">
               <div className="flex-1 min-w-0">
                 <label className="text-xs text-neutral-400 mb-1.5 block">시작 시간</label>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-neutral-500 transition-colors [color-scheme:dark]"
-                />
+                <TimeInput value={startTime} onChange={setStartTime} />
               </div>
               <div className="flex-1 min-w-0">
                 <label className="text-xs text-neutral-400 mb-1.5 block">종료 시간</label>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-neutral-500 transition-colors [color-scheme:dark]"
-                />
+                <TimeInput value={endTime} onChange={setEndTime} />
               </div>
             </div>
 
