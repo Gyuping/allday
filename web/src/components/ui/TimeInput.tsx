@@ -24,7 +24,7 @@ function TimeSelect({ value, options, placeholder, onChange, side }: SelectProps
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full appearance-none bg-transparent text-sm text-white py-2.5 pr-6 outline-none cursor-pointer ${
+        className={`w-full appearance-none bg-neutral-800 text-sm py-2.5 pr-6 outline-none cursor-pointer [color-scheme:dark] ${
           side === 'left' ? 'pl-3' : 'pl-2'
         } ${!value ? 'text-neutral-500' : 'text-white'}`}
       >
