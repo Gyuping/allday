@@ -24,6 +24,7 @@ export default withSentryConfig(nextConfig, {
   // 빌드 로그 출력 최소화
   silent: true,
 
-  // 자동 instrumentation 비활성화 — 수동 설정 사용
-  autoInstrumentServerFunctions: false,
+  webpack: {
+    autoInstrumentServerFunctions: false,
+  },
 })
