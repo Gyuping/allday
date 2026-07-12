@@ -1,19 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import * as Sentry from '@sentry/nextjs'
 import { useAuth } from '@/contexts/AuthContext'
-
-// 앱 전체에서 한 번만 Sentry 초기화
-if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-    tracesSampleRate: 1.0,
-    replaysOnErrorSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    integrations: [Sentry.replayIntegration()],
-  })
-}
 import { useCalendarStore } from '@/store/calendarStore'
 import { useTodoStore } from '@/store/todoStore'
 import { subscribeCalendar } from '@/lib/firestore/calendar'
