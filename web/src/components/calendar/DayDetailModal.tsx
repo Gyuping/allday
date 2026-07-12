@@ -205,6 +205,7 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
                   id: crypto.randomUUID(),
                   title: data.title,
                   date: data.date,
+                  endDate: data.endDate || undefined,
                   startTime: data.startTime || undefined,
                   endTime: data.endTime || undefined,
                   color: data.color,
@@ -222,6 +223,7 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
             <EventForm
               initialTitle={view.event.title}
               initialDate={view.event.date}
+              initialEndDate={view.event.endDate}
               initialStartTime={view.event.startTime}
               initialEndTime={view.event.endTime}
               initialColor={view.event.color}
@@ -232,6 +234,7 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
                 await updateEvent(view.event.id, {
                   title: data.title,
                   date: data.date,
+                  endDate: data.endDate || undefined,
                   startTime: data.startTime || undefined,
                   endTime: data.endTime || undefined,
                   color: data.color,

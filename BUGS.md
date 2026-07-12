@@ -36,3 +36,8 @@
 | 2026-07-11 | `store/todoStore.ts` | `clearAll` Firestore 실패 시 에러 토스트 없음 | 🟢 낮음 | 해결완료 | catch 블록에 `toast.error` 추가 |
 | 2026-07-11 | `components/todo/EditTodoModal.tsx` | `onSave`(async)를 await하지 않아 실패해도 모달이 닫힘 | 🟡 보통 | 해결완료 | `handleSubmit` async화, `onSave` await 처리 |
 | 2026-07-11 | `lib/firestore/todos.ts` | `clearAllTodos`가 Firestore 배치 한도 500개 초과 시 에러 | 🟡 보통 | 해결완료 | 500개 단위 청크로 분할 커밋 |
+| 2026-07-11 | `components/calendar/EventForm.tsx` | `endDate` 필드 없음 → 다일정 편집 시 종료일 확인/변경 불가 | 🟡 보통 | 해결완료 | `EventFormData`에 `endDate` 추가, 날짜 필드를 시작일+종료일 2칸으로 분리 |
+| 2026-07-11 | `components/calendar/DayDetailModal.tsx` | 일정 추가/수정 시 `endDate` 미전달 → 다일정 생성 불가 | 🟡 보통 | 해결완료 | `addEvent`/`updateEvent` 호출 시 `data.endDate` 전달 |
+| 2026-07-11 | `components/calendar/WeekView.tsx` | `pointercancel` 미처리 → iOS Safari 터치 취소 시 드래그 상태 잔존 | 🟡 보통 | 해결완료 | `cancelDrag` 콜백 추가, `window.addEventListener('pointercancel', cancelDrag)` |
+| 2026-07-11 | `components/calendar/DayView.tsx` | `pointercancel` 미처리 → iOS Safari 터치 취소 시 드래그 상태 잔존 | 🟡 보통 | 해결완료 | 동일 방법 적용 |
+| 2026-07-11 | `app/calendar/page.tsx` | `onEventClick`에 `initialEvent` 미전달 → 일정 클릭 시 목록 뷰로 열림 (편집 뷰 바로 진입 불가) | 🟢 낮음 | 해결완료 | 세 뷰 모두 `setDayModal({ date: ev.date, initialEvent: ev })` 로 변경 |

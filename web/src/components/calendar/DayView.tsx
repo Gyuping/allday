@@ -103,6 +103,13 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
     onSlotClick(dateStr, start, end)
   }, [dateStr, onSlotClick])
 
+  // iOS Safari: pointercancel 발생 시 드래그 상태만 초기화
+  const cancelDrag = useCallback(() => {
+    if (!drag.current) return
+    drag.current = null
+    setDragPreview(null)
+  }, [])
+
   useEffect(() => {
     const onPointerMove = (e: PointerEvent) => {
       if (!e.isPrimary || !drag.current) return
@@ -112,11 +119,13 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
 
     window.addEventListener('pointermove', onPointerMove)
     window.addEventListener('pointerup', finishDrag)
+    window.addEventListener('pointercancel', cancelDrag)
     return () => {
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', finishDrag)
+      window.removeEventListener('pointercancel', cancelDrag)
     }
-  }, [yToMinutes, finishDrag])
+  }, [yToMinutes, finishDrag, cancelDrag])
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden border border-neutral-800 rounded-xl">

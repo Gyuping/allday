@@ -121,6 +121,13 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
     onSlotClick(date, start, end)
   }, [onSlotClick])
 
+  // iOS Safari: pointercancel 발생 시 드래그 상태만 초기화 (onSlotClick 호출 안 함)
+  const cancelDrag = useCallback(() => {
+    if (!drag.current) return
+    drag.current = null
+    setDragPreview(null)
+  }, [])
+
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
       if (!e.isPrimary || !drag.current) return
@@ -133,11 +140,13 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
 
     window.addEventListener('pointermove', handlePointerMove)
     window.addEventListener('pointerup', finishDrag)
+    window.addEventListener('pointercancel', cancelDrag)
     return () => {
       window.removeEventListener('pointermove', handlePointerMove)
       window.removeEventListener('pointerup', finishDrag)
+      window.removeEventListener('pointercancel', cancelDrag)
     }
-  }, [dateStrs, yToMinutes, finishDrag])
+  }, [dateStrs, yToMinutes, finishDrag, cancelDrag])
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden border border-neutral-800 rounded-xl">

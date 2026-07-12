@@ -13,6 +13,7 @@ import TimeInput from '@/components/ui/TimeInput'
 export type EventFormData = {
   title: string
   date: string
+  endDate: string
   startTime: string
   endTime: string
   color: string
@@ -23,6 +24,7 @@ export type EventFormData = {
 type Props = {
   initialTitle?: string
   initialDate: string
+  initialEndDate?: string
   initialStartTime?: string
   initialEndTime?: string
   initialColor?: string
@@ -37,6 +39,7 @@ type Props = {
 export default function EventForm({
   initialTitle = '',
   initialDate,
+  initialEndDate = '',
   initialStartTime = '',
   initialEndTime = '',
   initialColor = '#ef4444',
@@ -50,6 +53,7 @@ export default function EventForm({
   const { request: requestNotification } = useNotificationPermission()
   const [title, setTitle]       = useState(initialTitle)
   const [date, setDate]         = useState(initialDate)
+  const [endDate, setEndDate]   = useState(initialEndDate)
   const [startTime, setStartTime] = useState(initialStartTime)
   const [endTime, setEndTime]   = useState(initialEndTime)
   const [color, setColor]       = useState(initialColor)
@@ -62,7 +66,7 @@ export default function EventForm({
       onSubmit={(e) => {
         e.preventDefault()
         if (!title.trim()) { setTitleError(true); return }
-        onSubmit({ title: title.trim(), date, startTime, endTime, color, reminder, category })
+        onSubmit({ title: title.trim(), date, endDate, startTime, endTime, color, reminder, category })
       }}
       className="flex flex-col gap-4"
     >
@@ -102,14 +106,26 @@ export default function EventForm({
         </div>
       </div>
 
-      <div>
-        <label className="text-xs text-neutral-400 mb-1.5 block">날짜</label>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-neutral-500 transition-colors [color-scheme:dark]"
-        />
+      <div className="flex gap-3">
+        <div className="flex-1 min-w-0">
+          <label className="text-xs text-neutral-400 mb-1.5 block">날짜</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => { setDate(e.target.value); if (endDate && e.target.value > endDate) setEndDate('') }}
+            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-neutral-500 transition-colors [color-scheme:dark]"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <label className="text-xs text-neutral-400 mb-1.5 block">종료일 (선택)</label>
+          <input
+            type="date"
+            value={endDate}
+            min={date}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-neutral-500 transition-colors [color-scheme:dark]"
+          />
+        </div>
       </div>
 
       <div className="flex gap-3">
