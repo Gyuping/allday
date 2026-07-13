@@ -82,6 +82,17 @@ export default function CalendarPage() {
     [events, activeCategory]
   )
 
+  // 헤더 "+" 버튼 — 현재 보고 있는 날짜 기준으로 일정 추가
+  const quickAddDate = useMemo(() => {
+    if (viewMode === 'day') return toDateStr(viewDay.getFullYear(), viewDay.getMonth(), viewDay.getDate())
+    if (viewMode === 'week') return toDateStr(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate())
+    // 월간 뷰: 현재 달에 오늘이 있으면 오늘, 아니면 해당 달 1일
+    if (today.getFullYear() === viewYear && today.getMonth() === viewMonth) {
+      return toDateStr(today.getFullYear(), today.getMonth(), today.getDate())
+    }
+    return toDateStr(viewYear, viewMonth, 1)
+  }, [viewMode, viewDay, weekStart, today, viewYear, viewMonth])
+
   // 헤더 타이틀
   const headerTitle = useMemo(() => {
     if (viewMode === 'month') return `${viewYear}년 ${MONTH_NAMES[viewMonth]}`
@@ -175,7 +186,7 @@ export default function CalendarPage() {
             <ChevronRight size={18} />
           </button>
           <button
-            onClick={() => setDayModal({ date: toDateStr(today.getFullYear(), today.getMonth(), today.getDate()), startAdd: true })}
+            onClick={() => setDayModal({ date: quickAddDate, startAdd: true })}
             className="ml-2 flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-white text-neutral-900 font-medium hover:bg-neutral-100 transition-colors"
           >
             <Plus size={15} />
