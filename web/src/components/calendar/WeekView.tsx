@@ -5,7 +5,7 @@
 // - 15분 단위 스냅으로 정렬됨
 // - 종일 이벤트(startTime 없음)는 상단 별도 영역에 표시
 import { useMemo, useRef, useState, useCallback, useEffect, Fragment } from 'react'
-import { toDateStr } from '@/lib/date'
+import { toDateStr, todayStr } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
@@ -55,10 +55,7 @@ interface DragState {
 }
 
 export default function WeekView({ weekStart, events, holidays, onDayClick, onEventClick, onSlotClick }: Props) {
-  const today = useMemo(() => {
-    const t = new Date()
-    return toDateStr(t.getFullYear(), t.getMonth(), t.getDate())
-  }, [])
+  const today = todayStr()
 
   const days      = useMemo(() => getWeekDays(weekStart), [weekStart])
   const dateStrs  = useMemo(() => days.map((d) => toDateStr(d.getFullYear(), d.getMonth(), d.getDate())), [days])

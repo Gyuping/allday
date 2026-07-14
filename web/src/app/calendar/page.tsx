@@ -43,7 +43,27 @@ export default function CalendarPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const { events, updateEvent, isLoading } = useCalendarStore()
   const todos = useTodoStore((s) => s.todos)
-  const holidays = useHolidays(viewYear)
+  // 현재 뷰에서 실제 보이는 연도 계산 — 주간/일간 뷰에서 연도를 넘어도 올바른 공휴일 로드
+  const effectiveYear = useMemo(() => {
+    if (viewMode === 'week') return weekStart.getFullYear()
+    if (viewMode === 'day') return viewDay.getFullYear()
+    return viewYear
+  }, [viewMode, weekStart, viewDay, viewYear])
+
+  // 주간 뷰에서 주가 연도를 걸칠 때 (예: 12/29~1/4) 다음 연도 공휴일도 로드
+  const crossYear = useMemo(() => {
+    if (viewMode !== 'week') return effectiveYear
+    const end = new Date(weekStart)
+    end.setDate(end.getDate() + 6)
+    return end.getFullYear()
+  }, [viewMode, weekStart, effectiveYear])
+
+  const primaryHolidays = useHolidays(effectiveYear)
+  const secondaryHolidays = useHolidays(crossYear)
+  const holidays = useMemo(
+    () => effectiveYear === crossYear ? primaryHolidays : { ...primaryHolidays, ...secondaryHolidays },
+    [primaryHolidays, secondaryHolidays, effectiveYear, crossYear]
+  )
 
   // 완료 이력이 있는 날짜 집합 (현재 완료 상태와 무관하게 completedAt 기준)
   const completedTodoDates = useMemo(() => {

@@ -69,7 +69,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
     const completedAt = completed ? new Date().toLocaleDateString('sv-SE') : undefined
     set((s) => ({ todos: s.todos.map((t) => t.id === id ? { ...t, completed, completedAt } : t) }))
     try {
-      await fsUpdate(userId, id, { completed, completedAt: completedAt ?? null } as Partial<Todo>)
+      await fsUpdate(userId, id, { completed, completedAt })
     } catch {
       set((s) => ({ todos: s.todos.map((t) => t.id === id ? todo : t) }))
       toast.error('상태 변경에 실패했어요.')
@@ -112,14 +112,17 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
     if (expired.length === 0) return
     const expiredIds = new Set(expired.map((t) => t.id))
     set((s) => ({ todos: s.todos.map((t) => expiredIds.has(t.id) ? { ...t, completed: false } : t) }))
-    try {
-      await Promise.all(expired.map((t) => fsUpdate(userId, t.id, { completed: false })))
-    } catch {
-      // Firestore 실패 시 낙관적 업데이트 롤백
+    const results = await Promise.allSettled(expired.map((t) => fsUpdate(userId, t.id, { completed: false })))
+    const failedIds = new Set(
+      results
+        .map((r, i) => (r.status === 'rejected' ? expired[i].id : null))
+        .filter((id): id is string => id !== null)
+    )
+    if (failedIds.size > 0) {
       set((s) => ({
         todos: s.todos.map((t) => {
           const orig = expired.find((e) => e.id === t.id)
-          return orig ? orig : t
+          return orig && failedIds.has(t.id) ? orig : t
         }),
       }))
     }

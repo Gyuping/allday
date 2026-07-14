@@ -20,14 +20,15 @@ export default function MonthPicker({ year, month, onSelect, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   // 피커 영역 외부를 클릭하면 닫히도록 document에 이벤트를 등록한다.
-  const handlePointerDown = useCallback((e: MouseEvent) => {
+  const handleOutsideDown = useCallback((e: PointerEvent) => {
+    if (!e.isPrimary) return
     if (ref.current && !ref.current.contains(e.target as Node)) onClose()
   }, [onClose])
 
   useEffect(() => {
-    document.addEventListener('mousedown', handlePointerDown)
-    return () => document.removeEventListener('mousedown', handlePointerDown)
-  }, [handlePointerDown])
+    document.addEventListener('pointerdown', handleOutsideDown)
+    return () => document.removeEventListener('pointerdown', handleOutsideDown)
+  }, [handleOutsideDown])
 
   return (
     <div

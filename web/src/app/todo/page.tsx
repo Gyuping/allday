@@ -40,7 +40,7 @@ export default function TodoPage() {
     return [...set]
   }, [todos])
 
-  const filtered = useMemo(() => {
+  const { activeTodos, completedTodos, activeCount, completedCount } = useMemo(() => {
     let list = todos.filter((t) => {
       if (filter === 'active')    return !t.completed
       if (filter === 'completed') return t.completed
@@ -59,14 +59,13 @@ export default function TodoPage() {
       return b.createdAt.localeCompare(a.createdAt)
     })
 
-    // 완료 항목은 항상 아래로
-    const active    = list.filter((t) => !t.completed)
-    const completed = list.filter((t) =>  t.completed)
-    return [...active, ...completed]
+    const activeTodos    = list.filter((t) => !t.completed)
+    const completedTodos = list.filter((t) =>  t.completed)
+    // 전체 카운트는 필터와 무관하게 todos 전체 기준
+    const activeCount    = todos.reduce((n, t) => n + (t.completed ? 0 : 1), 0)
+    const completedCount = todos.length - activeCount
+    return { activeTodos, completedTodos, activeCount, completedCount }
   }, [todos, filter, sort, tagFilter])
-
-  const activeCount    = todos.filter((t) => !t.completed).length
-  const completedCount = todos.filter((t) =>  t.completed).length
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
@@ -168,7 +167,7 @@ export default function TodoPage() {
       )}
 
       {/* 목록 */}
-      {filtered.length === 0 ? (
+      {activeTodos.length === 0 && completedTodos.length === 0 ? (
         <div className="text-center py-16 text-neutral-600">
           {todos.length === 0 ? (
             <div className="flex flex-col items-center gap-4">
@@ -187,7 +186,7 @@ export default function TodoPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {filtered.filter((t) => !t.completed).map((todo) => (
+          {activeTodos.map((todo) => (
             <TodoItem
               key={todo.id}
               todo={todo}
@@ -197,16 +196,16 @@ export default function TodoPage() {
             />
           ))}
 
-          {filtered.some((t) => t.completed) && (
+          {completedTodos.length > 0 && (
             <>
               <div className="flex items-center gap-3 my-2">
                 <div className="flex-1 h-px bg-neutral-800" />
                 <span className="text-xs text-neutral-600 shrink-0">
-                  완료 {filtered.filter((t) => t.completed).length}개
+                  완료 {completedTodos.length}개
                 </span>
                 <div className="flex-1 h-px bg-neutral-800" />
               </div>
-              {filtered.filter((t) => t.completed).map((todo) => (
+              {completedTodos.map((todo) => (
                 <TodoItem
                   key={todo.id}
                   todo={todo}

@@ -51,12 +51,14 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
     const prev = events.find((e) => e.id === id)
     if (!prev) return
 
-    const next = new Set(pendingIds)
-    next.add(id)
-    set((s) => ({
-      pendingIds: next,
-      events: s.events.map((e) => e.id === id ? { ...e, ...data } : e),
-    }))
+    set((s) => {
+      const ids = new Set(s.pendingIds)
+      ids.add(id)
+      return {
+        pendingIds: ids,
+        events: s.events.map((e) => e.id === id ? { ...e, ...data } : e),
+      }
+    })
     try {
       await updateCalendarEvent(userId, id, data)
     } catch {
@@ -74,12 +76,17 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   deleteEvent: async (id) => {
     const { userId, events } = get()
     if (!userId) return
-    const prev = events.find((e) => e.id === id)
+    const idx = events.findIndex((e) => e.id === id)
+    const prev = events[idx]
     set((s) => ({ events: s.events.filter((e) => e.id !== id) }))
     try {
       await deleteCalendarEvent(userId, id)
     } catch {
-      if (prev) set((s) => ({ events: [...s.events, prev] }))
+      if (prev) set((s) => {
+        const restored = [...s.events]
+        restored.splice(Math.min(idx, restored.length), 0, prev)
+        return { events: restored }
+      })
       toast.error('일정 삭제에 실패했어요. 다시 시도해주세요.')
     }
   },

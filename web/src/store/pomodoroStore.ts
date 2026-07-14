@@ -58,6 +58,11 @@ export const usePomodoroStore = create<PomodoroStore>()(
     {
       name: 'allay-pomodoro',
       partialize: (s) => ({ settings: s.settings, sessionCount: s.sessionCount }),
+      // 새로고침 후 secondsLeft를 persisted settings 기준으로 재설정
+      // (초기값이 DEFAULT_SETTINGS 고정이라 settings 변경 후 새로고침 시 오표시 방지)
+      onRehydrateStorage: () => (state) => {
+        if (state) state.secondsLeft = state.settings.workMinutes * 60
+      },
     }
   )
 )

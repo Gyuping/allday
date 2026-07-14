@@ -31,6 +31,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: Props) {
 
       {/* 완료 체크박스 */}
       <button
+        aria-label="완료 체크"
         onClick={onToggle}
         className={`mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${
           todo.completed ? 'bg-emerald-500 border-emerald-500' : 'border-neutral-600 hover:border-neutral-400'
@@ -61,6 +62,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: Props) {
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 shrink-0 transition-opacity">
         {!todo.completed && (
           <button
+            aria-label="수정"
             onClick={(e) => { e.stopPropagation(); onEdit() }}
             className="p-1.5 rounded-lg text-neutral-600 hover:text-blue-400 hover:bg-neutral-800 transition-colors"
           >
@@ -68,6 +70,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: Props) {
           </button>
         )}
         <button
+          aria-label="삭제"
           onClick={onDelete}
           className="p-1.5 rounded-lg text-neutral-600 hover:text-red-400 hover:bg-neutral-800 transition-colors"
         >

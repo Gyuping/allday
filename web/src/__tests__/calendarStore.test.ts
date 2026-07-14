@@ -99,6 +99,17 @@ describe('deleteEvent', () => {
     expect(useCalendarStore.getState().events).toHaveLength(1)
   })
 
+  it('Firestore 실패 시 이벤트를 원래 위치에 복원한다', async () => {
+    await useCalendarStore.getState().addEvent(makeEvent({ id: 'evt-2', title: '두 번째' }))
+    await useCalendarStore.getState().addEvent(makeEvent({ id: 'evt-3', title: '세 번째' }))
+    // evt-1(index 0), evt-2(index 1), evt-3(index 2) 순서
+    vi.mocked(firestoreCalendar.deleteCalendarEvent).mockRejectedValueOnce(new Error('fail'))
+    await useCalendarStore.getState().deleteEvent('evt-2')
+    const events = useCalendarStore.getState().events
+    expect(events).toHaveLength(3)
+    expect(events[1].id).toBe('evt-2') // 원래 인덱스(1)에 복원
+  })
+
   it('존재하지 않는 이벤트 삭제는 무시한다', async () => {
     await useCalendarStore.getState().deleteEvent('없는-id')
     expect(useCalendarStore.getState().events).toHaveLength(1)

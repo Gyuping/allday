@@ -3,7 +3,7 @@
 // 로그인 상태를 앱 전체에 공유하는 컨텍스트
 // useAuth() 훅으로 어디서든 현재 유저 정보를 가져올 수 있다.
 import { createContext, useContext, useEffect, useState } from 'react'
-import { onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, GoogleAuthProvider, User } from 'firebase/auth'
+import { onAuthStateChanged, signInWithPopup, signInWithRedirect, signInWithEmailAndPassword, getRedirectResult, signOut, GoogleAuthProvider, User } from 'firebase/auth'
 import { FirebaseError } from 'firebase/app'
 import { auth } from '@/lib/firebase'
 
@@ -19,6 +19,14 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // E2E 테스트 환경에서만 Playwright가 직접 호출할 수 있는 로그인 헬퍼 노출
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== 'true' || !auth) return
+    window.__testSignIn = (email, pw) =>
+      signInWithEmailAndPassword(auth, email, pw).then(() => undefined)
+    return () => { delete window.__testSignIn }
+  }, [])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

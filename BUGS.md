@@ -41,3 +41,13 @@
 | 2026-07-11 | `components/calendar/WeekView.tsx` | `pointercancel` 미처리 → iOS Safari 터치 취소 시 드래그 상태 잔존 | 🟡 보통 | 해결완료 | `cancelDrag` 콜백 추가, `window.addEventListener('pointercancel', cancelDrag)` |
 | 2026-07-11 | `components/calendar/DayView.tsx` | `pointercancel` 미처리 → iOS Safari 터치 취소 시 드래그 상태 잔존 | 🟡 보통 | 해결완료 | 동일 방법 적용 |
 | 2026-07-11 | `app/calendar/page.tsx` | `onEventClick`에 `initialEvent` 미전달 → 일정 클릭 시 목록 뷰로 열림 (편집 뷰 바로 진입 불가) | 🟢 낮음 | 해결완료 | 세 뷰 모두 `setDayModal({ date: ev.date, initialEvent: ev })` 로 변경 |
+| 2026-07-13 | `app/calendar/page.tsx` | 주간/일간 뷰에서 연도를 넘어 이동해도 `viewYear` 미갱신 → 공휴일 미표시 또는 오표시 | 🟡 보통 | 해결완료 | `effectiveYear` 계산(뷰에 따라 weekStart/viewDay 기준), 주가 연도 걸칠 때 `crossYear`로 두 연도 병합 |
+| 2026-07-13 | `components/calendar/WeekView.tsx` | `today` 값이 마운트 시 한 번만 계산(`useMemo []`) → 자정 이후에도 오늘 강조 미갱신 | 🟢 낮음 | 해결완료 | `useMemo` 제거, `todayStr()` 직접 호출로 교체 |
+| 2026-07-13 | `components/calendar/DayView.tsx` | `todayStr` 값이 마운트 시 한 번만 계산(`useMemo []`) → 자정 이후에도 오늘 강조 미갱신 | 🟢 낮음 | 해결완료 | `useMemo` 제거, `todayStr()` 직접 호출로 교체 (60s 인터벌로 자동 갱신) |
+| 2026-07-13 | `components/calendar/MonthPicker.tsx` | 외부 클릭 감지를 `mousedown`만 등록 → 모바일 터치에서 피커가 안 닫힘 | 🟢 낮음 | 해결완료 | `mousedown` → `pointerdown`으로 교체, `isPrimary` 체크 추가 |
+| 2026-07-13 | `store/todoStore.ts` | `toggleTodo` 완료 해제 시 `completedAt ?? null` → Firestore에 null 저장 (deleteField 미적용) | 🟢 낮음 | 해결완료 | `?? null` 제거, `cleanForUpdate`가 undefined → `deleteField()` 처리하도록 수정 |
+| 2026-07-13 | `store/todoStore.ts` | `resetExpiredCompleted`에서 `Promise.all` 사용 → 부분 실패 시 성공한 항목까지 롤백, 서버/클라 불일치 | 🟢 낮음 | 해결완료 | `Promise.allSettled`로 교체, 실패한 항목만 개별 롤백 |
+| 2026-07-13 | `app/pomodoro/page.tsx` | 스킵 버튼 `skipPhase`에서 `sessionCount % n === 0`으로 판단 → 첫 스킵(count=0)에서 longBreak로 잘못 이동, 4번째 스킵에서 shortBreak로 잘못 이동 | 🟡 보통 | 해결완료 | `(sessionCount + 1) % n`으로 수정 (`completeRef`와 동일 기준) |
+| 2026-07-13 | `store/pomodoroStore.ts` | `secondsLeft`가 `DEFAULT_SETTINGS.workMinutes * 60`으로 초기화 → 설정 변경 후 새로고침 시 50:00으로 오표시, 링 progress 오류 | 🟢 낮음 | 해결완료 | `onRehydrateStorage`에서 `secondsLeft`를 persisted `settings.workMinutes * 60`으로 재설정 |
+| 2026-07-13 | `store/calendarStore.ts` | `updateEvent`에서 `pendingIds` 추가 시 클로저 캡처된 `next` 사용 → `set()` 함수형 업데이트와 패턴 불일치, 동시 set 배치 시 stale 가능성 | 🟢 낮음 | 해결완료 | `set((s) => { const ids = new Set(s.pendingIds); ids.add(id); ... })` 패턴으로 통일 |
+| 2026-07-13 | `store/calendarStore.ts` | `deleteEvent` 실패 롤백 시 `[...s.events, prev]`로 이벤트가 배열 맨 뒤로 이동 → 원래 위치 복원 안 됨 | 🟢 낮음 | 해결완료 | `findIndex`로 원래 인덱스 저장, `splice(idx, 0, prev)`로 원위치에 복원 |

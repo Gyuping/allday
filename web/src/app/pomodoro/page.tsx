@@ -78,8 +78,9 @@ export default function PomodoroPage() {
   const skipPhase = () => {
     const { phase, sessionCount, settings } = usePomodoroStore.getState()
     if (phase === 'work') {
+      // completeRef와 동일하게 +1 기준으로 판단 (incrementSession은 호출하지 않음)
       const next: PomodoroPhase =
-        sessionCount % settings.sessionsBeforeLongBreak === 0 ? 'longBreak' : 'shortBreak'
+        (sessionCount + 1) % settings.sessionsBeforeLongBreak === 0 ? 'longBreak' : 'shortBreak'
       setPhase(next)
     } else {
       setPhase('work')

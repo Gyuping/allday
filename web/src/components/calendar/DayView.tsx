@@ -5,7 +5,7 @@
 // - 현재 시각 빨간 선으로 표시
 // - 종일 이벤트는 상단 별도 영역에 표시
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
-import { toDateStr } from '@/lib/date'
+import { toDateStr, todayStr } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
 
 const HOURS       = Array.from({ length: 24 }, (_, i) => i)
@@ -44,13 +44,8 @@ type Props = {
 }
 
 export default function DayView({ date, events, holidays, onEventClick, onSlotClick }: Props) {
-  const todayStr = useMemo(() => {
-    const t = new Date()
-    return toDateStr(t.getFullYear(), t.getMonth(), t.getDate())
-  }, [])
-
   const dateStr  = toDateStr(date.getFullYear(), date.getMonth(), date.getDate())
-  const isToday  = dateStr === todayStr
+  const isToday  = dateStr === todayStr()
   const weekday  = WEEKDAYS[date.getDay()]
   const isSun    = date.getDay() === 0
   const isSat    = date.getDay() === 6
