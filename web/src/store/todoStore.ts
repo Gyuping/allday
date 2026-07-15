@@ -79,12 +79,17 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
   deleteTodo: async (id) => {
     const { userId, todos } = get()
     if (!userId) return
-    const prev = todos.find((t) => t.id === id)
+    const idx  = todos.findIndex((t) => t.id === id)
+    const prev = todos[idx]
     set((s) => ({ todos: s.todos.filter((t) => t.id !== id) }))
     try {
       await fsDelete(userId, id)
     } catch {
-      if (prev) set((s) => ({ todos: [...s.todos, prev] }))
+      if (prev) set((s) => {
+        const restored = [...s.todos]
+        restored.splice(Math.min(idx, restored.length), 0, prev)
+        return { todos: restored }
+      })
       toast.error('할일 삭제에 실패했어요.')
     }
   },

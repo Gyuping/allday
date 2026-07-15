@@ -91,14 +91,14 @@ export default function TodoPage() {
                   onClick={() => { clearAll(); setConfirmClear(false) }}
                   className="px-3 py-2 rounded-xl text-sm bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
                 >
-                  전체 삭제
+                  미완료 삭제
                 </button>
               </>
             ) : (
               <button
                 onClick={() => setConfirmClear(true)}
                 className="p-2 rounded-xl text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-colors"
-                title="전체 삭제"
+                title="미완료 삭제"
               >
                 <Trash2 size={17} />
               </button>

@@ -39,14 +39,18 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       setEvents,
       (e) => { console.error('[calendar]', e); setCalendarLoading(false); toast.error('캘린더를 불러오지 못했어요.') }
     )
+    let resetDone = false
     const unsubTodos = subscribeTodos(
       user.uid,
-      setTodos,
+      (todos) => {
+        setTodos(todos)
+        if (!resetDone) {
+          resetDone = true
+          resetExpiredCompleted().catch((e) => console.error('[resetExpiredCompleted]', e))
+        }
+      },
       (e) => { console.error('[todos]', e); setTodoLoading(false); toast.error('할일을 불러오지 못했어요.') }
     )
-
-    // async 함수 호출 시 에러 무시 처리
-    resetExpiredCompleted().catch((e) => console.error('[resetExpiredCompleted]', e))
 
     const scheduleMidnightReset = () => {
       const now = new Date()
