@@ -52,9 +52,12 @@ export default function TodoPage() {
 
   const allTags = useMemo(() => {
     const set = new Set<string>()
-    todos.forEach((t) => t.tags?.forEach((tag) => set.add(tag)))
+    todos.forEach((t) => {
+      if (t.completed && t.completedAt && t.completedAt < today) return
+      t.tags?.forEach((tag) => set.add(tag))
+    })
     return [...set]
-  }, [todos])
+  }, [todos, today])
 
   const { activeTodos, completedTodos, activeCount, completedCount } = useMemo(() => {
     let list = todos.filter((t) => {
@@ -79,9 +82,10 @@ export default function TodoPage() {
 
     const activeTodos    = list.filter((t) => !t.completed)
     const completedTodos = list.filter((t) =>  t.completed)
-    // 전체 카운트는 필터와 무관하게 todos 전체 기준
-    const activeCount    = todos.reduce((n, t) => n + (t.completed ? 0 : 1), 0)
-    const completedCount = todos.length - activeCount
+    // 카운트는 필터/태그와 무관하게 전체 기준, 단 만료된 완료 항목은 제외
+    const visible        = todos.filter((t) => !(t.completed && t.completedAt && t.completedAt < today))
+    const activeCount    = visible.filter((t) => !t.completed).length
+    const completedCount = visible.filter((t) =>  t.completed).length
     return { activeTodos, completedTodos, activeCount, completedCount }
   }, [todos, filter, sort, tagFilter, today])
 
