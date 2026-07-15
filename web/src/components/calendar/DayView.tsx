@@ -4,7 +4,7 @@
 // - 마우스/터치 드래그로 시작~끝 시간 선택해 일정 추가
 // - 현재 시각 빨간 선으로 표시
 // - 종일 이벤트는 상단 별도 영역에 표시
-import { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import { useMemo, useRef, useState, useCallback, useEffect, useLayoutEffect } from 'react'
 import { toDateStr, todayStr } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
 
@@ -75,6 +75,9 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
     }
   }, [events, dateStr])
 
+  const cbRef = useRef({ onEventClick, onSlotClick })
+  useLayoutEffect(() => { cbRef.current = { onEventClick, onSlotClick } })
+
   // 드래그 상태
   const colRef = useRef<HTMLDivElement>(null)
   const drag   = useRef<{ startMin: number; currentMin: number } | null>(null)
@@ -95,8 +98,8 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
     const end   = toTimeStr(hi < lo + SNAP ? lo + SNAP : hi)
     drag.current = null
     setDragPreview(null)
-    onSlotClick(dateStr, start, end)
-  }, [dateStr, onSlotClick])
+    cbRef.current.onSlotClick(dateStr, start, end)
+  }, [dateStr])
 
   // iOS Safari: pointercancel 발생 시 드래그 상태만 초기화
   const cancelDrag = useCallback(() => {
@@ -158,7 +161,7 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
               <div
                 key={ev.id}
                 data-event
-                onClick={() => onEventClick(ev)}
+                onClick={() => cbRef.current.onEventClick(ev)}
                 className="text-[12px] font-medium px-2 py-1 rounded cursor-pointer hover:opacity-80 transition-opacity"
                 style={{ backgroundColor: `${ev.color ?? '#6366f1'}33`, color: ev.color ?? '#818cf8' }}
               >
@@ -258,7 +261,7 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
                 <div
                   key={ev.id}
                   data-event
-                  onClick={() => onEventClick(ev)}
+                  onClick={() => cbRef.current.onEventClick(ev)}
                   className="absolute left-1 right-1 rounded-lg px-2.5 py-1 cursor-pointer hover:opacity-80 transition-opacity overflow-hidden z-20"
                   style={{
                     top,

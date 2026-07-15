@@ -1,7 +1,7 @@
  'use client'
 
 // 캘린더 페이지 — 월간/주간/일간 뷰 전환 가능
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, ChevronDown, Plus } from 'lucide-react'
 import CalendarGrid from '@/components/calendar/CalendarGrid'
 import WeekView from '@/components/calendar/WeekView'
@@ -31,7 +31,21 @@ function getWeekStart(date: Date): Date {
 const VIEW_LABELS: Record<ViewMode, string> = { month: '월', week: '주', day: '일' }
 
 export default function CalendarPage() {
-  const today = useMemo(() => new Date(), [])
+  const [today, setToday] = useState(() => new Date())
+
+  useEffect(() => {
+    const msToMidnight = () => {
+      const now = new Date()
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()
+    }
+    let id: ReturnType<typeof setTimeout>
+    const schedule = () => {
+      id = setTimeout(() => { setToday(new Date()); schedule() }, msToMidnight())
+    }
+    schedule()
+    return () => clearTimeout(id)
+  }, [])
+
   const [viewMode, setViewMode]   = useState<ViewMode>('month')
   const [viewYear, setViewYear]   = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())

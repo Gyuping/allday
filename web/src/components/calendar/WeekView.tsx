@@ -4,7 +4,7 @@
 // - 마우스/터치 드래그로 시작~끝 시간을 선택해 일정 추가 가능
 // - 15분 단위 스냅으로 정렬됨
 // - 종일 이벤트(startTime 없음)는 상단 별도 영역에 표시
-import { useMemo, useRef, useState, useCallback, useEffect, Fragment } from 'react'
+import { useMemo, useRef, useState, useCallback, useEffect, useLayoutEffect, Fragment } from 'react'
 import { toDateStr, todayStr } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
 
@@ -62,6 +62,8 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
   const colRefs   = useRef<(HTMLDivElement | null)[]>([])
   const drag      = useRef<DragState | null>(null)
   const [dragPreview, setDragPreview] = useState<DragState | null>(null)
+  const cbRef = useRef({ onDayClick, onEventClick, onSlotClick })
+  useLayoutEffect(() => { cbRef.current = { onDayClick, onEventClick, onSlotClick } })
 
   const eventsByDate = useMemo(() => {
     const map: Record<string, { timed: CalendarEvent[]; allDay: CalendarEvent[] }> = {}
@@ -115,8 +117,8 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
     const end   = toTimeStr(hi < lo + SNAP ? lo + SNAP : hi)
     drag.current = null
     setDragPreview(null)
-    onSlotClick(date, start, end)
-  }, [onSlotClick])
+    cbRef.current.onSlotClick(date, start, end)
+  }, [])
 
   // iOS Safari: pointercancel 발생 시 드래그 상태만 초기화 (onSlotClick 호출 안 함)
   const cancelDrag = useCallback(() => {
@@ -160,7 +162,7 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
             <div
               key={dateStr}
               className="flex-1 flex flex-col items-center py-2 border-l border-neutral-800 cursor-pointer hover:bg-neutral-800/50 transition-colors"
-              onClick={() => onDayClick(dateStr)}
+              onClick={() => cbRef.current.onDayClick(dateStr)}
             >
               <span className={`text-xs font-medium ${isSun ? 'text-red-400' : isSat ? 'text-blue-400' : 'text-neutral-500'}`}>
                 {WEEKDAYS[day.getDay()]}
@@ -188,7 +190,7 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
                 <div
                   key={ev.id}
                   data-event
-                  onClick={(e) => { e.stopPropagation(); onEventClick(ev) }}
+                  onClick={(e) => { e.stopPropagation(); cbRef.current.onEventClick(ev) }}
                   className="text-[11px] font-medium px-1.5 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity"
                   style={{ backgroundColor: `${ev.color ?? '#6366f1'}33`, color: ev.color ?? '#818cf8' }}
                 >
@@ -280,7 +282,7 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
                     <div
                       key={ev.id}
                       data-event
-                      onClick={(e) => { e.stopPropagation(); onEventClick(ev) }}
+                      onClick={(e) => { e.stopPropagation(); cbRef.current.onEventClick(ev) }}
                       className="absolute left-0.5 right-0.5 rounded-md px-1.5 py-0.5 cursor-pointer hover:opacity-80 transition-opacity overflow-hidden z-20"
                       style={{
                         top,

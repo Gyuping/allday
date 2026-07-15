@@ -60,12 +60,14 @@ export default function EventForm({
   const [reminder, setReminder] = useState<number | undefined>(initialReminder)
   const [category, setCategory] = useState<string | undefined>(initialCategory)
   const [titleError, setTitleError] = useState(false)
+  const endDateError = endDate && endDate < date
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault()
         if (!title.trim()) { setTitleError(true); return }
+        if (endDate && endDate < date) return
         onSubmit({ title: title.trim(), date, endDate, startTime, endTime, color, reminder, category })
       }}
       className="flex flex-col gap-4"
@@ -123,8 +125,11 @@ export default function EventForm({
             value={endDate}
             min={date}
             onChange={(e) => setEndDate(e.target.value)}
-            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-neutral-500 transition-colors [color-scheme:dark]"
+            className={`w-full bg-neutral-800 border rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-neutral-500 transition-colors [color-scheme:dark] ${
+              endDateError ? 'border-red-500' : 'border-neutral-700'
+            }`}
           />
+          {endDateError && <p className="text-xs text-red-400 mt-1">종료일이 시작일보다 이전입니다.</p>}
         </div>
       </div>
 
