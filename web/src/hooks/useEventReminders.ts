@@ -1,5 +1,3 @@
-// 캘린더 일정의 미리 알림을 실행하는 커스텀 훅
-// Providers.tsx에서 앱 전체에 한 번만 마운트된다.
 import { useEffect, useRef } from 'react'
 import { useCalendarStore } from '@/store/calendarStore'
 import { parseDateStr } from '@/lib/date'

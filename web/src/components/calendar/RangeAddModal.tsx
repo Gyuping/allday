@@ -33,10 +33,10 @@ export default function RangeAddModal({ startDate, endDate, onClose }: Props) {
     ? formatDateLabel(dates[0])
     : `${formatDateLabel(dates[0])} – ${formatDateLabel(dates[dates.length - 1])}`
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
-    await addEvent({
+    addEvent({
       id: crypto.randomUUID(),
       title: title.trim(),
       date: dates[0],

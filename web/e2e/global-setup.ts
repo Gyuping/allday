@@ -6,7 +6,6 @@
  *
  * 사전 조건: 다른 터미널에서 `npm run emulator` 를 먼저 실행해야 한다.
  */
-import type { FullConfig } from '@playwright/test'
 
 const AUTH_EMULATOR  = 'http://127.0.0.1:9099'
 const FS_EMULATOR    = 'http://127.0.0.1:8080'
@@ -14,7 +13,7 @@ const PROJECT_ID     = 'allday-test'
 const TEST_EMAIL     = 'test@allday.com'
 const TEST_PASSWORD  = 'testpass123'
 
-export default async function globalSetup(_config: FullConfig) {
+export default async function globalSetup(): Promise<void> {
   // 1. Emulator 실행 확인
   try {
     const res = await fetch(

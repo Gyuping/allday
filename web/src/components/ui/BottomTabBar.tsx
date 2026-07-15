@@ -1,7 +1,5 @@
 'use client'
 
-// 모바일 전용 하단 탭바 (md 미만에서만 표시)
-// Sidebar와 NAV_ITEMS를 공유하며 mobileLabel(짧은 이름)을 사용한다.
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { NAV_ITEMS } from '@/constants/navigation'

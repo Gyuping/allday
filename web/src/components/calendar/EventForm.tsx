@@ -1,7 +1,5 @@
 'use client'
 
-// 일정 추가/수정 폼 — DayDetailModal에서 분리
-// 추가/수정 모두 이 컴포넌트를 재사용한다.
 import { useState } from 'react'
 import { Trash2, Check } from 'lucide-react'
 import { CATEGORIES } from '@/lib/categories'

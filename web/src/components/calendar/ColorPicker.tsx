@@ -1,9 +1,5 @@
 'use client'
 
-// 일정 색상 선택 컴포넌트
-// - 한 번 클릭: 색상 선택
-// - 더블클릭: 해당 색상에 이름을 붙일 수 있는 입력창 표시 (예: '병원', '회사')
-// 라벨은 colorLabelStore에 영구 저장되며 색상 아래 작은 글씨로 표시된다.
 import { useState, useRef, useCallback } from 'react'
 import { PRESET_COLORS } from '@/lib/colors'
 import { useColorLabelStore } from '@/store/colorLabelStore'
@@ -15,7 +11,7 @@ type Props = {
 
 export default function ColorPicker({ value, onChange }: Props) {
   const { labels, setLabel } = useColorLabelStore()
-  const [editing, setEditing] = useState<string | null>(null)  // 현재 편집 중인 색상 코드
+  const [editing, setEditing] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -25,7 +21,7 @@ export default function ColorPicker({ value, onChange }: Props) {
     setTimeout(() => inputRef.current?.focus(), 0)
   }, [labels])
 
-  // 라벨 저장 — 빈 문자열도 저장 가능 (라벨 제거 효과)
+  // 빈 문자열 저장 = 라벨 제거
   const handleLabelSave = useCallback(() => {
     if (editing) {
       setLabel(editing, draft.trim())

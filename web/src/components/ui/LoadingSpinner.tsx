@@ -1,4 +1,3 @@
-// 데이터 로딩 중 표시할 스피너
 export default function LoadingSpinner({ message = '불러오는 중...' }: { message?: string }) {
   return (
     <div className="flex flex-col items-center justify-center flex-1 gap-3 text-neutral-600">

@@ -1,6 +1,5 @@
 'use client'
 
-// 할일 추가 모달 — 제목, 우선순위, 마감일, 태그를 입력한다.
 import { useState, useRef, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { useTodoStore } from '@/store/todoStore'
@@ -21,10 +20,10 @@ export default function AddTodoModal({ onClose }: Props) {
 
   useEffect(() => { titleRef.current?.focus() }, [])
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    await addTodo({
+    addTodo({
       id: crypto.randomUUID(),
       title: title.trim(),
       completed: false,

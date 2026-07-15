@@ -1,7 +1,5 @@
 'use client'
 
-// 캘린더 헤더에서 년/월을 선택하는 팝업 컴포넌트
-// 헤더 제목 클릭 시 나타나며, 외부 클릭 시 자동으로 닫힌다.
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -15,11 +13,9 @@ type Props = {
 }
 
 export default function MonthPicker({ year, month, onSelect, onClose }: Props) {
-  // 피커 내에서 년도를 이동할 수 있도록 별도 상태로 관리
   const [pickerYear, setPickerYear] = useState(year)
   const ref = useRef<HTMLDivElement>(null)
 
-  // 피커 영역 외부를 클릭하면 닫히도록 document에 이벤트를 등록한다.
   const handleOutsideDown = useCallback((e: PointerEvent) => {
     if (!e.isPrimary) return
     if (ref.current && !ref.current.contains(e.target as Node)) onClose()
@@ -51,7 +47,6 @@ export default function MonthPicker({ year, month, onSelect, onClose }: Props) {
       {/* 월 선택 그리드 */}
       <div className="grid grid-cols-3 gap-1.5">
         {MONTHS.map((label, i) => {
-          // 현재 캘린더에서 보고 있는 년/월과 일치하면 활성화 표시
           const isSelected = pickerYear === year && i === month
           return (
             <button

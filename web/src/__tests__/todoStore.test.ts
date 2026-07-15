@@ -60,7 +60,7 @@ describe('toggleTodo', () => {
   })
 
   it('완료 시 completedAt이 오늘 날짜로 설정된다', async () => {
-    const today = new Date().toLocaleDateString('sv-SE')
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' })
     await useTodoStore.getState().toggleTodo('todo-1')
     expect(useTodoStore.getState().todos[0].completedAt).toBe(today)
   })

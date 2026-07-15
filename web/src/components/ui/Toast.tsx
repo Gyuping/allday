@@ -1,6 +1,5 @@
 'use client'
 
-// 화면 우측 하단에 떠오르는 토스트 알림 컴포넌트
 import { useToastStore } from '@/store/toastStore'
 
 const ICONS = {

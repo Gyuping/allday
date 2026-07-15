@@ -1,7 +1,5 @@
 'use client'
 
-// 날짜 클릭 시 열리는 모달 — 목록/추가/수정 3가지 뷰를 관리한다.
-// EventForm은 별도 파일(EventForm.tsx)로 분리되어 있다.
 import { useState, useMemo } from 'react'
 import { X, Plus, ChevronRight, ChevronLeft, Trash2, Bell } from 'lucide-react'
 import { useCalendarStore } from '@/store/calendarStore'
@@ -170,8 +168,8 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
                     <>
                       <button onClick={() => setConfirmAll(false)} className="px-3 py-2.5 rounded-xl text-sm font-medium bg-neutral-800 text-neutral-400 hover:bg-neutral-700 transition-colors">취소</button>
                       <button
-                        onClick={async () => {
-                          await Promise.allSettled(dayEvents.map((ev) => deleteEvent(ev.id)))
+                        onClick={() => {
+                          dayEvents.forEach((ev) => deleteEvent(ev.id))
                           setConfirmAll(false)
                         }}
                         className="px-3 py-2.5 rounded-xl text-sm font-medium bg-rose-500 text-white hover:bg-rose-600 transition-colors whitespace-nowrap"
@@ -200,8 +198,10 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
               initialStartTime={startTime}
               initialEndTime={endTime}
               submitLabel="추가"
-              onSubmit={async (data) => {
-                await addEvent({
+              onSubmit={(data) => {
+                // 낙관적 업데이트는 동기적으로 완료 — await 없이 즉시 닫기
+                // (오프라인 시 Firestore 프로미스가 서버 응답 전까지 resolve 안 됨)
+                addEvent({
                   id: crypto.randomUUID(),
                   title: data.title,
                   date: data.date,
@@ -230,8 +230,8 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
               initialReminder={view.event.reminder}
               initialCategory={view.event.category}
               submitLabel="저장"
-              onSubmit={async (data) => {
-                await updateEvent(view.event.id, {
+              onSubmit={(data) => {
+                updateEvent(view.event.id, {
                   title: data.title,
                   date: data.date,
                   endDate: data.endDate || undefined,
@@ -244,8 +244,8 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
                 setView('list')
               }}
               onCancel={() => setView('list')}
-              onDelete={async () => {
-                await deleteEvent(view.event.id)
+              onDelete={() => {
+                deleteEvent(view.event.id)
                 setView('list')
               }}
             />

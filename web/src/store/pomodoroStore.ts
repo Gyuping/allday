@@ -56,11 +56,24 @@ export const usePomodoroStore = create<PomodoroStore>()(
       },
     }),
     {
-      name: 'allay-pomodoro',
+      name: 'allday-pomodoro',
       partialize: (s) => ({ settings: s.settings, sessionCount: s.sessionCount }),
       // 새로고침 후 secondsLeft를 persisted settings 기준으로 재설정
       // (초기값이 DEFAULT_SETTINGS 고정이라 settings 변경 후 새로고침 시 오표시 방지)
       onRehydrateStorage: () => (state) => {
+        // 'allay-pomodoro' 오타 키 → 'allday-pomodoro' 마이그레이션
+        try {
+          const old = localStorage.getItem('allay-pomodoro')
+          if (old) {
+            const parsed = JSON.parse(old) as { state?: { settings?: PomodoroSettings; sessionCount?: number } }
+            if (state && parsed?.state) {
+              if (parsed.state.settings)          state.settings      = parsed.state.settings
+              if (parsed.state.sessionCount != null) state.sessionCount = parsed.state.sessionCount
+            }
+            localStorage.removeItem('allay-pomodoro')
+          }
+        } catch { /* 마이그레이션 실패 시 무시 */ }
+
         if (state) state.secondsLeft = state.settings.workMinutes * 60
       },
     }

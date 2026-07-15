@@ -1,15 +1,13 @@
 'use client'
 
-// 로그인 상태를 앱 전체에 공유하는 컨텍스트
-// useAuth() 훅으로 어디서든 현재 유저 정보를 가져올 수 있다.
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithPopup, signInWithRedirect, signInWithEmailAndPassword, getRedirectResult, signOut, GoogleAuthProvider, User } from 'firebase/auth'
 import { FirebaseError } from 'firebase/app'
 import { auth } from '@/lib/firebase'
 
 type AuthContextType = {
-  user: User | null       // 로그인한 유저 (null이면 비로그인)
-  loading: boolean        // 로그인 상태 확인 중
+  user: User | null
+  loading: boolean
   signInWithGoogle: () => Promise<void>
   logout: () => Promise<void>
 }
@@ -66,7 +64,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
-    await signOut(auth)
+    try {
+      await signOut(auth)
+    } catch (e) {
+      console.error('[logout]', e)
+      alert('로그아웃 중 오류가 발생했어요. 다시 시도해주세요.')
+    }
   }
 
   return (
@@ -76,7 +79,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-// 컴포넌트에서 로그인 정보를 쓸 때 이 훅을 호출한다
 export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')

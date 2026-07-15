@@ -1,7 +1,6 @@
 'use client'
 
-// 예상치 못한 런타임 에러를 잡아 흰 화면 대신 안내 메시지를 보여주는 컴포넌트
-// React의 componentDidCatch를 사용하므로 클래스 컴포넌트로 작성해야 한다.
+// 클래스 컴포넌트 필수: componentDidCatch는 class에서만 사용 가능
 import { Component, type ReactNode } from 'react'
 
 type Props = { children: ReactNode }

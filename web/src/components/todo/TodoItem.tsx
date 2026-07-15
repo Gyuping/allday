@@ -16,8 +16,7 @@ type Props = {
 export default function TodoItem({ todo, onToggle, onDelete, onEdit }: Props) {
   const p = PRIORITY_CONFIG[todo.priority]
 
-  // 마감일이 오늘보다 이전이면 기한 초과 (완료된 항목은 표시 안 함)
-  // toLocaleDateString('sv-SE') — 시스템 타임존 기준 YYYY-MM-DD (toISOString은 UTC라 자정 근처 오차 발생)
+  // toLocaleDateString('sv-SE'): KST 기준 날짜 (toISOString은 UTC라 자정 근처 오차 발생)
   const isOverdue = !todo.completed && todo.dueDate && todo.dueDate < todayKST()
 
   return (
@@ -27,10 +26,8 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: Props) {
         todo.completed ? 'border-neutral-800/60 opacity-60' : 'border-neutral-800 hover:border-neutral-700'
       }`}
     >
-      {/* 우선순위 색상 바 (좌측) */}
       <div className={`w-1 rounded-full shrink-0 self-stretch ${p.bar}`} />
 
-      {/* 완료 체크박스 */}
       <button
         aria-label="완료 체크"
         onClick={onToggle}
@@ -41,7 +38,6 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: Props) {
         {todo.completed && <CheckIcon />}
       </button>
 
-      {/* 할일 내용 영역 */}
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium leading-snug ${todo.completed ? 'line-through text-neutral-500' : 'text-neutral-100'}`}>
           {todo.title}

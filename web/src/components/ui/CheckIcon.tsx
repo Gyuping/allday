@@ -1,5 +1,3 @@
-// 체크마크(✓) SVG 아이콘 컴포넌트
-// TodoItem, DayDetailModal 등 여러 곳에서 동일한 SVG가 반복되어 분리했다.
 type Props = { size?: number; color?: string }
 
 export default function CheckIcon({ size = 10, color = 'white' }: Props) {

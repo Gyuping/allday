@@ -1,6 +1,5 @@
 'use client'
 
-// 데스크톱 전용 좌측 사이드바 네비게이션 (md 이상에서만 표시)
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -26,7 +25,6 @@ export default function Sidebar() {
 
   return (
     <aside className="hidden md:flex flex-col w-60 min-h-screen bg-neutral-900 text-white border-r border-neutral-800 shrink-0">
-      {/* 로고 */}
       <div className="px-6 py-6 border-b border-neutral-800">
         <Link
           href="/"
@@ -60,9 +58,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* 하단 유저 영역 */}
       <div className="p-3 border-t border-neutral-800 relative">
-        {/* 드롭다운 메뉴 */}
         {showMenu && (
           <div className="absolute bottom-16 left-3 right-3 bg-neutral-800 border border-neutral-700 rounded-xl shadow-xl overflow-hidden z-50">
             <button
@@ -83,7 +79,6 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* 유저 정보 버튼 */}
         <button
           onClick={() => setShowMenu((v) => !v)}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-neutral-800 transition-colors"

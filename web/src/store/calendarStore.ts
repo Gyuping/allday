@@ -17,9 +17,9 @@ type CalendarStore = {
   setUserId: (id: string | null) => void
   setEvents: (events: CalendarEvent[]) => void
   setLoading: (v: boolean) => void
-  addEvent: (event: CalendarEvent) => Promise<void>
-  updateEvent: (id: string, event: Partial<CalendarEvent>) => Promise<void>
-  deleteEvent: (id: string) => Promise<void>
+  addEvent: (event: CalendarEvent) => void
+  updateEvent: (id: string, event: Partial<CalendarEvent>) => void
+  deleteEvent: (id: string) => void
 }
 
 export const useCalendarStore = create<CalendarStore>((set, get) => ({
@@ -32,19 +32,17 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   setEvents: (events) => set({ events, isLoading: false }),
   setLoading: (v) => set({ isLoading: v }),
 
-  addEvent: async (event) => {
+  addEvent: (event) => {
     const { userId } = get()
     if (!userId) return
     set((s) => ({ events: [...s.events, event] }))
-    try {
-      await addCalendarEvent(userId, event)
-    } catch {
+    addCalendarEvent(userId, event).catch(() => {
       set((s) => ({ events: s.events.filter((e) => e.id !== event.id) }))
       toast.error('일정 저장에 실패했어요. 다시 시도해주세요.')
-    }
+    })
   },
 
-  updateEvent: async (id, data) => {
+  updateEvent: (id, data) => {
     const { userId, events, pendingIds } = get()
     if (!userId) return
     if (pendingIds.has(id)) return
@@ -59,35 +57,33 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
         events: s.events.map((e) => e.id === id ? { ...e, ...data } : e),
       }
     })
-    try {
-      await updateCalendarEvent(userId, id, data)
-    } catch {
-      set((s) => ({ events: s.events.map((e) => e.id === id ? prev : e) }))
-      toast.error('일정 수정에 실패했어요. 다시 시도해주세요.')
-    } finally {
-      set((s) => {
-        const ids = new Set(s.pendingIds)
-        ids.delete(id)
-        return { pendingIds: ids }
+    updateCalendarEvent(userId, id, data)
+      .catch(() => {
+        set((s) => ({ events: s.events.map((e) => e.id === id ? prev : e) }))
+        toast.error('일정 수정에 실패했어요. 다시 시도해주세요.')
       })
-    }
+      .finally(() => {
+        set((s) => {
+          const ids = new Set(s.pendingIds)
+          ids.delete(id)
+          return { pendingIds: ids }
+        })
+      })
   },
 
-  deleteEvent: async (id) => {
+  deleteEvent: (id) => {
     const { userId, events } = get()
     if (!userId) return
     const idx = events.findIndex((e) => e.id === id)
     const prev = events[idx]
     set((s) => ({ events: s.events.filter((e) => e.id !== id) }))
-    try {
-      await deleteCalendarEvent(userId, id)
-    } catch {
+    deleteCalendarEvent(userId, id).catch(() => {
       if (prev) set((s) => {
         const restored = [...s.events]
         restored.splice(Math.min(idx, restored.length), 0, prev)
         return { events: restored }
       })
       toast.error('일정 삭제에 실패했어요. 다시 시도해주세요.')
-    }
+    })
   },
 }))

@@ -1,6 +1,5 @@
 'use client'
 
-// 할일 수정 모달 — 기존 값으로 미리 채워진 상태에서 편집한다.
 import { useState, useRef, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import type { Todo } from '@/types'
@@ -10,7 +9,7 @@ import Modal from '@/components/ui/Modal'
 
 type Props = {
   todo: Todo
-  onSave: (updated: Partial<Todo>) => void | Promise<void>
+  onSave: (updated: Partial<Todo>) => void
   onClose: () => void
 }
 
@@ -23,10 +22,10 @@ export default function EditTodoModal({ todo, onSave, onClose }: Props) {
 
   useEffect(() => { titleRef.current?.focus() }, [])
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    await onSave({ title: title.trim(), priority, dueDate: dueDate || undefined, tags: tags.length > 0 ? tags : undefined })
+    onSave({ title: title.trim(), priority, dueDate: dueDate || undefined, tags: tags.length > 0 ? tags : undefined })
     onClose()
   }
 

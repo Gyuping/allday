@@ -1,8 +1,6 @@
 'use client'
 
-// 대시보드 홈 페이지 — 오늘의 일정, 할일, 포모도로 현황을 한눈에 보여준다.
-// 각 섹션에서 클릭/완료 처리도 바로 가능하다.
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { CalendarDays, CheckSquare, Timer, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { useCalendarStore } from '@/store/calendarStore'
@@ -17,7 +15,19 @@ const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토']
 const PHASE_LABEL: Record<string, string> = { work: '집중', shortBreak: '짧은 휴식', longBreak: '긴 휴식' }
 
 export default function DashboardPage() {
-  const today = useMemo(() => new Date(), [])
+  const [today, setToday] = useState(() => new Date())
+
+  useEffect(() => {
+    const msToMidnight = () => {
+      const now = new Date()
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()
+    }
+    let id: ReturnType<typeof setTimeout>
+    const schedule = () => { id = setTimeout(() => { setToday(new Date()); schedule() }, msToMidnight()) }
+    schedule()
+    return () => clearTimeout(id)
+  }, [])
+
   const todayStr = toDateStr(today.getFullYear(), today.getMonth(), today.getDate())
 
   const events = useCalendarStore((s) => s.events)
@@ -32,19 +42,25 @@ export default function DashboardPage() {
     [events, todayStr]
   )
 
+  // today 상태 변경 시(자정) KST 기준 만료일도 재계산
+  const kstToday = useMemo(
+    () => today.toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' }),
+    [today]
+  )
+
   const pendingTodos = useMemo(
     () => todos.filter((t) => !t.completed).slice(0, 5),
     [todos]
   )
 
   const completedTodos = useMemo(
-    () => todos.filter((t) => t.completed).slice(0, 5),
-    [todos]
+    () => todos.filter((t) => t.completed && !(t.completedAt && t.completedAt < kstToday)).slice(0, 5),
+    [todos, kstToday]
   )
 
   const completedCount = useMemo(
-    () => todos.filter((t) => t.completed).length,
-    [todos]
+    () => todos.filter((t) => t.completed && !(t.completedAt && t.completedAt < kstToday)).length,
+    [todos, kstToday]
   )
 
   const dateLabel = `${today.getFullYear()}년 ${MONTH_NAMES[today.getMonth()]} ${today.getDate()}일`
@@ -120,7 +136,7 @@ export default function DashboardPage() {
               <div
                 key={todo.id}
                 className="group flex items-center gap-3 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 px-4 py-3 transition-colors cursor-pointer"
-                onClick={() => { toggleTodo(todo.id).catch(() => {}) }}
+                onClick={() => { toggleTodo(todo.id) }}
               >
                 <div className="w-5 h-5 rounded-full border-2 border-neutral-600 group-hover:border-emerald-500 flex items-center justify-center transition-colors shrink-0">
                   <CheckCircle2 size={12} className="text-neutral-700 group-hover:text-emerald-500 transition-colors" />
@@ -156,7 +172,7 @@ export default function DashboardPage() {
               <div
                 key={todo.id}
                 className="group flex items-center gap-3 rounded-xl bg-neutral-900/60 border border-neutral-800/60 px-4 py-3 opacity-60 hover:opacity-80 transition-opacity cursor-pointer"
-                onClick={() => { toggleTodo(todo.id).catch(() => {}) }}
+                onClick={() => { toggleTodo(todo.id) }}
               >
                 <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
                   <CheckIcon />

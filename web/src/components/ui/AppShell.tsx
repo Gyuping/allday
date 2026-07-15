@@ -8,6 +8,7 @@ import Sidebar from './Sidebar'
 import BottomTabBar from './BottomTabBar'
 import ToastContainer from './Toast'
 import ErrorBoundary from './ErrorBoundary'
+import OfflineIndicator from './OfflineIndicator'
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -25,9 +26,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <Providers>
+      <OfflineIndicator />
       <Sidebar />
       <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
-        {/* 페이지 내부 에러를 잡아 흰 화면 방지 */}
         <ErrorBoundary>
           {children}
         </ErrorBoundary>

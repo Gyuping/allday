@@ -2,7 +2,11 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth'
-import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase/firestore'
+import {
+  getFirestore, initializeFirestore,
+  persistentLocalCache, persistentMultipleTabManager,
+  connectFirestoreEmulator, type Firestore,
+} from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY    ?? '',
@@ -20,11 +24,27 @@ let _db: Firestore | undefined
 if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
   _app  = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
   _auth = getAuth(_app)
-  _db   = getFirestore(_app)
+
+  const isEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true'
+  if (isEmulator) {
+    // 에뮬레이터 환경에서는 IndexedDB 캐시 없이 기본 Firestore 사용
+    _db = getFirestore(_app)
+  } else {
+    // HMR 재평가 시 initializeFirestore 중복 호출 방지 — 이미 초기화됐으면 getFirestore로 fallback
+    try {
+      _db = initializeFirestore(_app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      })
+    } catch {
+      _db = getFirestore(_app)
+    }
+  }
 
   // E2E 테스트 환경에서 Firebase Emulator에 연결
   // HMR 재평가 시 중복 연결 방지를 위해 window 플래그 사용
-  if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+  if (isEmulator) {
     const w = window as typeof window & { __fbEmuConnected?: boolean }
     if (!w.__fbEmuConnected) {
       w.__fbEmuConnected = true

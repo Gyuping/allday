@@ -1,6 +1,5 @@
 'use client'
 
-// 비로그인 상태일 때 보여주는 로그인 화면
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function LoginScreen() {
@@ -9,7 +8,6 @@ export default function LoginScreen() {
   return (
     <div className="flex w-full min-h-screen items-center justify-center bg-neutral-950">
       <div className="flex flex-col items-center gap-8 p-10 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl w-full max-w-sm">
-        {/* 로고 */}
         <div className="text-center">
           <h1
             className="text-4xl tracking-[-0.03em] select-none mb-2"
@@ -23,10 +21,8 @@ export default function LoginScreen() {
           <p className="text-sm text-neutral-500">캘린더 · 할일 · 포모도로를 한 곳에</p>
         </div>
 
-        {/* 구분선 */}
         <div className="w-full h-px bg-neutral-800" />
 
-        {/* 로그인 버튼 */}
         <div className="flex flex-col items-center gap-3 w-full">
           <button
             onClick={signInWithGoogle}

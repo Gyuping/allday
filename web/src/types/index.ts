@@ -1,16 +1,11 @@
-// 앱 전체에서 사용하는 TypeScript 타입 정의 모음
-// 새 타입이 필요하면 여기에 추가하고 import해서 사용
-
 import type { LucideIcon } from 'lucide-react'
 
-// 사이드바/하단탭에 표시할 네비게이션 항목
 export type NavItem = {
   label: string
   href: string
   icon: LucideIcon
 }
 
-// 캘린더 일정 하나를 나타내는 타입
 export type CalendarEvent = {
   id: string
   title: string
@@ -24,7 +19,6 @@ export type CalendarEvent = {
   category?: string  // 카테고리 id — src/lib/categories.ts 참고
 }
 
-// 할일(Todo) 하나를 나타내는 타입
 export type Todo = {
   id: string
   title: string
@@ -37,7 +31,6 @@ export type Todo = {
   tags?: string[]       // 소문자 태그 목록
 }
 
-// 포모도로 타이머 설정값
 export type PomodoroSettings = {
   workMinutes: number              // 집중 시간 (분)
   shortBreakMinutes: number        // 짧은 휴식 (분)
@@ -45,11 +38,8 @@ export type PomodoroSettings = {
   sessionsBeforeLongBreak: number  // 긴 휴식 전 집중 횟수
 }
 
-// 포모도로 현재 단계
 export type PomodoroPhase = 'work' | 'shortBreak' | 'longBreak'
 
-// 할일 목록 필터 상태
 export type TodoFilter = 'all' | 'active' | 'completed'
 
-// 할일 목록 정렬 기준
 export type TodoSort = 'createdAt' | 'dueDate' | 'priority'
