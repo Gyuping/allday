@@ -9,6 +9,7 @@ import {
   clearAllTodos as fsClear,
 } from '@/lib/firestore/todos'
 import { toast } from '@/store/toastStore'
+import { todayKST } from '@/lib/date'
 
 type TodoStore = {
   todos: Todo[]
@@ -22,7 +23,6 @@ type TodoStore = {
   toggleTodo: (id: string) => Promise<void>
   deleteTodo: (id: string) => Promise<void>
   clearAll: () => Promise<void>
-  resetExpiredCompleted: () => Promise<void>
 }
 
 export const useTodoStore = create<TodoStore>((set, get) => ({
@@ -66,7 +66,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
     const todo = todos.find((t) => t.id === id)
     if (!todo) return
     const completed   = !todo.completed
-    const completedAt = completed ? new Date().toLocaleDateString('sv-SE') : undefined
+    const completedAt = completed ? todayKST() : undefined
     set((s) => ({ todos: s.todos.map((t) => t.id === id ? { ...t, completed, completedAt } : t) }))
     try {
       await fsUpdate(userId, id, { completed, completedAt })
@@ -106,30 +106,6 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
     } catch {
       set({ todos })
       toast.error('삭제에 실패했어요.')
-    }
-  },
-
-  resetExpiredCompleted: async () => {
-    const { todos, userId } = get()
-    if (!userId) return
-    const today = new Date().toLocaleDateString('sv-SE')
-    const expired = todos.filter((t) => t.completed && t.completedAt && t.completedAt < today)
-    if (expired.length === 0) return
-    const expiredIds = new Set(expired.map((t) => t.id))
-    set((s) => ({ todos: s.todos.map((t) => expiredIds.has(t.id) ? { ...t, completed: false } : t) }))
-    const results = await Promise.allSettled(expired.map((t) => fsUpdate(userId, t.id, { completed: false })))
-    const failedIds = new Set(
-      results
-        .map((r, i) => (r.status === 'rejected' ? expired[i].id : null))
-        .filter((id): id is string => id !== null)
-    )
-    if (failedIds.size > 0) {
-      set((s) => ({
-        todos: s.todos.map((t) => {
-          const orig = expired.find((e) => e.id === t.id)
-          return orig && failedIds.has(t.id) ? orig : t
-        }),
-      }))
     }
   },
 }))

@@ -134,34 +134,6 @@ describe('clearAll', () => {
   })
 })
 
-describe('resetExpiredCompleted', () => {
-  it('어제 완료된 항목을 미완료로 되돌린다', async () => {
-    const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('sv-SE')
-    useTodoStore.setState({
-      todos: [makeTodo({ id: 'old', completed: true, completedAt: yesterday })],
-    })
-    await useTodoStore.getState().resetExpiredCompleted()
-    expect(useTodoStore.getState().todos[0].completed).toBe(false)
-  })
-
-  it('오늘 완료된 항목은 유지된다', async () => {
-    const today = new Date().toLocaleDateString('sv-SE')
-    useTodoStore.setState({
-      todos: [makeTodo({ id: 'new', completed: true, completedAt: today })],
-    })
-    await useTodoStore.getState().resetExpiredCompleted()
-    expect(useTodoStore.getState().todos[0].completed).toBe(true)
-  })
-
-  it('만료 항목이 없으면 Firestore를 호출하지 않는다', async () => {
-    const today = new Date().toLocaleDateString('sv-SE')
-    useTodoStore.setState({
-      todos: [makeTodo({ completed: true, completedAt: today })],
-    })
-    await useTodoStore.getState().resetExpiredCompleted()
-    expect(firestoreTodos.updateTodo).not.toHaveBeenCalled()
-  })
-})
 
 describe('updateTodo', () => {
   beforeEach(async () => {

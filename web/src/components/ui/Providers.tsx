@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCalendarStore } from '@/store/calendarStore'
 import { useTodoStore } from '@/store/todoStore'
@@ -14,12 +14,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   const { user } = useAuth()
   const { setUserId: setCalendarUserId, setEvents, setLoading: setCalendarLoading } = useCalendarStore()
-  const { setUserId: setTodoUserId, setTodos, setLoading: setTodoLoading, resetExpiredCompleted } = useTodoStore()
-  const midnightTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
+  const { setUserId: setTodoUserId, setTodos, setLoading: setTodoLoading } = useTodoStore()
   useEffect(() => {
-    if (midnightTimer.current) clearTimeout(midnightTimer.current)
-
     if (!user) {
       setCalendarUserId(null)
       setTodoUserId(null)
@@ -39,35 +35,16 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       setEvents,
       (e) => { console.error('[calendar]', e); setCalendarLoading(false); toast.error('캘린더를 불러오지 못했어요.') }
     )
-    let resetDone = false
     const unsubTodos = subscribeTodos(
       user.uid,
-      (todos) => {
-        setTodos(todos)
-        if (!resetDone) {
-          resetDone = true
-          resetExpiredCompleted().catch((e) => console.error('[resetExpiredCompleted]', e))
-        }
-      },
+      setTodos,
       (e) => { console.error('[todos]', e); setTodoLoading(false); toast.error('할일을 불러오지 못했어요.') }
     )
-
-    const scheduleMidnightReset = () => {
-      const now = new Date()
-      const msUntilMidnight =
-        new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()
-      midnightTimer.current = setTimeout(() => {
-        resetExpiredCompleted().catch((e) => console.error('[resetExpiredCompleted]', e))
-        scheduleMidnightReset()
-      }, msUntilMidnight)
-    }
-    scheduleMidnightReset()
 
     return () => {
       // 각각 try-catch로 감싸 하나가 실패해도 나머지가 실행되도록 보장
       try { unsubCalendar() } catch { /* 무시 */ }
       try { unsubTodos() }    catch { /* 무시 */ }
-      if (midnightTimer.current) clearTimeout(midnightTimer.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])

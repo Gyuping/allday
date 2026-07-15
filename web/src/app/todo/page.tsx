@@ -3,13 +3,14 @@
 // 할일 목록 페이지
 // 필터(전체/진행중/완료), 정렬(최신/우선순위/마감일), 태그 필터를 지원한다.
 // 완료된 항목은 항상 목록 아래쪽에 구분선과 함께 표시된다.
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { useTodoStore } from '@/store/todoStore'
 import TodoItem from '@/components/todo/TodoItem'
 import AddTodoModal from '@/components/todo/AddTodoModal'
 import EditTodoModal from '@/components/todo/EditTodoModal'
 import type { Todo, TodoFilter as Filter, TodoSort as Sort } from '@/types'
+import { todayKST } from '@/lib/date'
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
 
@@ -27,6 +28,21 @@ const SORT_OPTIONS: { value: Sort; label: string }[] = [
 
 export default function TodoPage() {
   const { todos, toggleTodo, deleteTodo, updateTodo, clearAll } = useTodoStore()
+  const [today, setToday] = useState(todayKST)
+
+  // KST 자정마다 today 갱신 — 날짜가 바뀌면 만료된 완료 항목이 즉시 숨겨짐
+  useEffect(() => {
+    const schedule = () => {
+      const now = new Date()
+      const kst = now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' })
+      const [y, m, d] = kst.split('-').map(Number)
+      const msUntilMidnight = Date.UTC(y, m - 1, d + 1) - 9 * 3600 * 1000 - now.getTime()
+      return setTimeout(() => { setToday(todayKST()); id = schedule() }, msUntilMidnight)
+    }
+    let id = schedule()
+    return () => clearTimeout(id)
+  }, [])
+
   const [confirmClear, setConfirmClear] = useState(false)
   const [filter, setFilter] = useState<Filter>('all')
   const [sort, setSort]     = useState<Sort>('createdAt')
@@ -42,6 +58,8 @@ export default function TodoPage() {
 
   const { activeTodos, completedTodos, activeCount, completedCount } = useMemo(() => {
     let list = todos.filter((t) => {
+      // 완료 날짜가 오늘보다 이전이면 투두 목록에서 숨김 (캘린더 데이터는 유지)
+      if (t.completed && t.completedAt && t.completedAt < today) return false
       if (filter === 'active')    return !t.completed
       if (filter === 'completed') return t.completed
       return true
@@ -65,7 +83,7 @@ export default function TodoPage() {
     const activeCount    = todos.reduce((n, t) => n + (t.completed ? 0 : 1), 0)
     const completedCount = todos.length - activeCount
     return { activeTodos, completedTodos, activeCount, completedCount }
-  }, [todos, filter, sort, tagFilter])
+  }, [todos, filter, sort, tagFilter, today])
 
   return (
     <div className="p-6 max-w-2xl mx-auto">

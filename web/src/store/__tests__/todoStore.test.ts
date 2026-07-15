@@ -133,28 +133,3 @@ describe('clearAll', () => {
   })
 })
 
-describe('resetExpiredCompleted', () => {
-  it('이전 날짜에 완료된 항목의 completed를 false로 리셋한다', async () => {
-    const todo = makeTodo({ completed: true, completedAt: '2025-01-01' })
-    useTodoStore.setState({ todos: [todo] })
-    await useTodoStore.getState().resetExpiredCompleted()
-    expect(useTodoStore.getState().todos[0].completed).toBe(false)
-  })
-
-  it('오늘 완료된 항목은 리셋하지 않는다', async () => {
-    const today = new Date().toLocaleDateString('sv-SE')
-    const todo  = makeTodo({ completed: true, completedAt: today })
-    useTodoStore.setState({ todos: [todo] })
-    await useTodoStore.getState().resetExpiredCompleted()
-    expect(useTodoStore.getState().todos[0].completed).toBe(true)
-  })
-
-  it('Firestore 실패 시 낙관적 업데이트를 롤백한다', async () => {
-    vi.mocked(fsTodos.updateTodo).mockRejectedValueOnce(new Error('network'))
-    const todo = makeTodo({ completed: true, completedAt: '2025-01-01' })
-    useTodoStore.setState({ todos: [todo] })
-    await useTodoStore.getState().resetExpiredCompleted()
-    // 롤백으로 완료 상태 복원
-    expect(useTodoStore.getState().todos[0].completed).toBe(true)
-  })
-})

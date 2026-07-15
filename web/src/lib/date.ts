@@ -21,6 +21,11 @@ export function todayStr(): string {
   return toDateStr(t.getFullYear(), t.getMonth(), t.getDate())
 }
 
+// 오늘 날짜를 KST(Asia/Seoul) 기준 'YYYY-MM-DD' 형식으로 반환
+export function todayKST(): string {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' })
+}
+
 // start부터 end까지 모든 날짜를 배열로 반환 (양 끝 포함)
 // start > end여도 자동으로 순서를 바로잡아 처리한다.
 export function getDateRange(start: string, end: string): string[] {

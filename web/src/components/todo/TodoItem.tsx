@@ -4,6 +4,7 @@ import { Trash2, Pencil } from 'lucide-react'
 import type { Todo } from '@/types'
 import { PRIORITY_CONFIG } from '@/lib/priorities'
 import CheckIcon from '@/components/ui/CheckIcon'
+import { todayKST } from '@/lib/date'
 
 type Props = {
   todo: Todo
@@ -17,7 +18,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }: Props) {
 
   // 마감일이 오늘보다 이전이면 기한 초과 (완료된 항목은 표시 안 함)
   // toLocaleDateString('sv-SE') — 시스템 타임존 기준 YYYY-MM-DD (toISOString은 UTC라 자정 근처 오차 발생)
-  const isOverdue = !todo.completed && todo.dueDate && todo.dueDate < new Date().toLocaleDateString('sv-SE')
+  const isOverdue = !todo.completed && todo.dueDate && todo.dueDate < todayKST()
 
   return (
     <div
