@@ -9,6 +9,8 @@ import { useTodoStore } from '@/store/todoStore'
 import TodoItem from '@/components/todo/TodoItem'
 import AddTodoModal from '@/components/todo/AddTodoModal'
 import EditTodoModal from '@/components/todo/EditTodoModal'
+import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import FetchErrorBanner from '@/components/ui/FetchErrorBanner'
 import type { Todo, TodoFilter as Filter, TodoSort as Sort } from '@/types'
 import { todayKST } from '@/lib/date'
 
@@ -27,7 +29,7 @@ const SORT_OPTIONS: { value: Sort; label: string }[] = [
 ]
 
 export default function TodoPage() {
-  const { todos, toggleTodo, deleteTodo, updateTodo, clearAll } = useTodoStore()
+  const { todos, toggleTodo, deleteTodo, updateTodo, clearAll, isLoading, fetchError, requestRetry } = useTodoStore()
   const [today, setToday] = useState(todayKST)
 
   // KST 자정마다 today 갱신 — 날짜가 바뀌면 만료된 완료 항목이 즉시 숨겨짐
@@ -88,6 +90,9 @@ export default function TodoPage() {
     const completedCount = visible.filter((t) =>  t.completed).length
     return { activeTodos, completedTodos, activeCount, completedCount }
   }, [todos, filter, sort, tagFilter, today])
+
+  if (isLoading) return <LoadingSpinner message="할일 불러오는 중..." />
+  if (fetchError) return <FetchErrorBanner message="할일을 불러오지 못했어요." onRetry={requestRetry} />
 
   return (
     <div className="p-6 max-w-2xl mx-auto">

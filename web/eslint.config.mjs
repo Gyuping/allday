@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Node.js CJS 스크립트 — require() 사용 불가피
+    "scripts/**",
   ]),
 ]);
 

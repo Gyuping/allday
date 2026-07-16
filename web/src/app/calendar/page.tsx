@@ -1,6 +1,5 @@
- 'use client'
+'use client'
 
-// 캘린더 페이지 — 월간/주간/일간 뷰 전환 가능
 import { useState, useMemo, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, ChevronDown, Plus } from 'lucide-react'
 import CalendarGrid from '@/components/calendar/CalendarGrid'
@@ -12,6 +11,7 @@ import MonthPicker from '@/components/calendar/MonthPicker'
 import { useCalendarStore } from '@/store/calendarStore'
 import { useTodoStore } from '@/store/todoStore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import FetchErrorBanner from '@/components/ui/FetchErrorBanner'
 import { useHolidays } from '@/hooks/useHolidays'
 import { toDateStr, dateFromStr } from '@/lib/date'
 import { CATEGORIES } from '@/lib/categories'
@@ -55,7 +55,7 @@ export default function CalendarPage() {
   const [rangeModal, setRangeModal] = useState<{ start: string; end: string } | null>(null)
   const [showPicker, setShowPicker] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
-  const { events, updateEvent, isLoading } = useCalendarStore()
+  const { events, updateEvent, isLoading, fetchError, requestRetry } = useCalendarStore()
   const todos = useTodoStore((s) => s.todos)
   // 현재 뷰에서 실제 보이는 연도 계산 — 주간/일간 뷰에서 연도를 넘어도 올바른 공휴일 로드
   const effectiveYear = useMemo(() => {
@@ -86,7 +86,6 @@ export default function CalendarPage() {
     return set
   }, [todos])
 
-  // 월 이동
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11) }
     else setViewMonth((m) => m - 1)
@@ -96,11 +95,9 @@ export default function CalendarPage() {
     else setViewMonth((m) => m + 1)
   }
 
-  // 주 이동
   const prevWeek = () => setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() - 7); return n })
   const nextWeek = () => setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() + 7); return n })
 
-  // 일 이동
   const prevDay = () => setViewDay((d) => { const n = new Date(d); n.setDate(n.getDate() - 1); return n })
   const nextDay = () => setViewDay((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n })
 
@@ -116,7 +113,6 @@ export default function CalendarPage() {
     [events, activeCategory]
   )
 
-  // 헤더 "+" 버튼 — 현재 보고 있는 날짜 기준으로 일정 추가
   const quickAddDate = useMemo(() => {
     if (viewMode === 'day') return toDateStr(viewDay.getFullYear(), viewDay.getMonth(), viewDay.getDate())
     if (viewMode === 'week') return toDateStr(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate())
@@ -127,7 +123,6 @@ export default function CalendarPage() {
     return toDateStr(viewYear, viewMonth, 1)
   }, [viewMode, viewDay, weekStart, today, viewYear, viewMonth])
 
-  // 헤더 타이틀
   const headerTitle = useMemo(() => {
     if (viewMode === 'month') return `${viewYear}년 ${MONTH_NAMES[viewMonth]}`
     if (viewMode === 'day') {
@@ -157,7 +152,6 @@ export default function CalendarPage() {
     else nextDay()
   }
 
-  // 일간 뷰 클릭 시 해당 날짜로 이동
   const handleDayClick = (date: string) => {
     const [y, m, d] = date.split('-').map(Number)
     setViewDay(new Date(y, m - 1, d))
@@ -165,10 +159,10 @@ export default function CalendarPage() {
   }
 
   if (isLoading) return <LoadingSpinner message="캘린더 불러오는 중..." />
+  if (fetchError) return <FetchErrorBanner message="캘린더를 불러오지 못했어요." onRetry={requestRetry} />
 
   return (
     <div className="flex flex-col h-screen p-4 md:p-6 gap-4">
-      {/* 헤더 */}
       <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -196,7 +190,6 @@ export default function CalendarPage() {
             오늘
           </button>
 
-          {/* 뷰 전환 버튼 */}
           <div className="flex gap-0.5 p-0.5 bg-neutral-800/60 rounded-lg">
             {(['month', 'week', 'day'] as ViewMode[]).map((mode) => (
               <button
@@ -229,7 +222,6 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* 카테고리 필터 */}
       <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
         <button
           onClick={() => setActiveCategory(null)}
@@ -249,7 +241,6 @@ export default function CalendarPage() {
         ))}
       </div>
 
-      {/* 뷰 렌더링 */}
       {viewMode === 'month' && (
         <CalendarGrid
           year={viewYear} month={viewMonth}

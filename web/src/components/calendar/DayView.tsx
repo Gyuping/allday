@@ -1,9 +1,5 @@
 'use client'
 
-// 일간 캘린더 뷰 — 하루의 시간대별 일정을 세로로 표시한다.
-// - 마우스/터치 드래그로 시작~끝 시간 선택해 일정 추가
-// - 현재 시각 빨간 선으로 표시
-// - 종일 이벤트는 상단 별도 영역에 표시
 import { useMemo, useRef, useState, useCallback, useEffect, useLayoutEffect } from 'react'
 import { toDateStr, todayStr } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
@@ -51,7 +47,6 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
   const isSat    = date.getDay() === 6
   const holiday  = holidays[dateStr]
 
-  // 현재 시각 위치 (분 단위)
   const [nowMinutes, setNowMinutes] = useState(() => {
     const n = new Date()
     return n.getHours() * 60 + n.getMinutes()
@@ -64,7 +59,6 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
     return () => clearInterval(id)
   }, [])
 
-  // 이 날짜의 이벤트 — 한 번만 필터링해서 timed/allDay로 분리
   const { timedEvents, allDayEvents } = useMemo(() => {
     const inRange = events.filter((e) =>
       e.endDate ? e.date <= dateStr && dateStr <= e.endDate : e.date === dateStr
@@ -78,7 +72,6 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
   const cbRef = useRef({ onEventClick, onSlotClick })
   useLayoutEffect(() => { cbRef.current = { onEventClick, onSlotClick } })
 
-  // 드래그 상태
   const colRef = useRef<HTMLDivElement>(null)
   const drag   = useRef<{ startMin: number; currentMin: number } | null>(null)
   const [dragPreview, setDragPreview] = useState<{ startMin: number; currentMin: number } | null>(null)
@@ -127,8 +120,6 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden border border-neutral-800 rounded-xl">
-
-      {/* 날짜 헤더 */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-neutral-800 bg-neutral-900 shrink-0">
         <div className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center ${isToday ? 'bg-blue-500' : 'bg-neutral-800'}`}>
           <span className={`text-[10px] font-semibold ${isSun ? 'text-red-400' : isSat ? 'text-blue-300' : isToday ? 'text-white/70' : 'text-neutral-500'}`}>
@@ -150,7 +141,6 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
         </div>
       </div>
 
-      {/* 종일 이벤트 */}
       {allDayEvents.length > 0 && (
         <div className="flex border-b border-neutral-800 bg-neutral-900/50 shrink-0 min-h-[36px]">
           <div className="w-16 flex items-center justify-end pr-3 shrink-0">
@@ -172,11 +162,8 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
         </div>
       )}
 
-      {/* 시간 그리드 */}
       <div className="flex-1 overflow-y-auto">
         <div className="flex" style={{ height: HOUR_HEIGHT * 24 }}>
-
-          {/* 시간 레이블 */}
           <div className="w-16 shrink-0 relative select-none">
             {HOURS.map((h) => (
               <div key={h}>
@@ -196,7 +183,6 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
             ))}
           </div>
 
-          {/* 이벤트 컬럼 */}
           <div
             ref={colRef}
             className="flex-1 border-l border-neutral-800 relative select-none"
@@ -211,7 +197,6 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
               setDragPreview({ startMin, currentMin: startMin + SNAP })
             }}
           >
-            {/* 시간 구분선 */}
             {HOUR_LINES.map(({ hour, top, halfTop }) => (
               <div key={hour}>
                 <div className="absolute left-0 right-0 border-t border-neutral-800/60" style={{ top }} />
@@ -219,7 +204,6 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
               </div>
             ))}
 
-            {/* 현재 시각 표시선 (오늘만) */}
             {isToday && (
               <div
                 className="absolute left-0 right-0 flex items-center z-30 pointer-events-none"
@@ -230,7 +214,6 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
               </div>
             )}
 
-            {/* 드래그 프리뷰 */}
             {dragPreview && (
               <div
                 className="absolute left-1 right-1 rounded-lg pointer-events-none z-10 border border-blue-400/60"
@@ -248,7 +231,6 @@ export default function DayView({ date, events, holidays, onEventClick, onSlotCl
               </div>
             )}
 
-            {/* 이벤트 */}
             {timedEvents.map((ev) => {
               if (!ev.startTime) return null
               const startMin = timeToMinutes(ev.startTime)

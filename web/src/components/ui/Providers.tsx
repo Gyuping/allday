@@ -9,69 +9,106 @@ import { usePomodoroStore, DEFAULT_SETTINGS } from '@/store/pomodoroStore'
 import { subscribeCalendar } from '@/lib/firestore/calendar'
 import { subscribeTodos } from '@/lib/firestore/todos'
 import { useEventReminders } from '@/hooks/useEventReminders'
-import { toast } from '@/store/toastStore'
+
+function migrateUnscopedKey(oldKey: string, newKey: string) {
+  try {
+    if (!localStorage.getItem(newKey) && localStorage.getItem(oldKey)) {
+      localStorage.setItem(newKey, localStorage.getItem(oldKey)!)
+      localStorage.removeItem(oldKey)
+    }
+  } catch { /* 무시 */ }
+}
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   useEventReminders()
 
   const { user } = useAuth()
-  const { setUserId: setCalendarUserId, setEvents, setLoading: setCalendarLoading } = useCalendarStore()
-  const { setUserId: setTodoUserId, setTodos, setLoading: setTodoLoading } = useTodoStore()
+  const {
+    setUserId: setCalendarUserId, setEvents,
+    setLoading: setCalendarLoading, setFetchError: setCalendarError,
+    setSubscriptionFailed: setCalendarFailed,
+    retryToken: calRetryToken,
+  } = useCalendarStore()
+  const {
+    setUserId: setTodoUserId, setTodos,
+    setLoading: setTodoLoading, setFetchError: setTodoError,
+    setSubscriptionFailed: setTodoFailed,
+    retryToken: todoRetryToken,
+  } = useTodoStore()
 
-  // 이전 사용자 UID 추적 — 계정이 바뀌면 로컬 전용 스토어를 초기화해 계정 간 데이터 혼합 방지
   const prevUidRef = useRef<string | null | undefined>(undefined)
 
+  // Effect 1: 인증 상태 변경 처리 (구독 생성은 Effect 2, 3에서)
   useEffect(() => {
     const uid = user?.uid ?? null
     const prev = prevUidRef.current
     prevUidRef.current = uid
 
-    if (prev !== undefined && prev !== null && prev !== uid) {
-      // 이전 계정이 있었는데 다른 계정(또는 로그아웃)으로 바뀐 경우 — localStorage 제거 및 메모리 리셋
-      try { localStorage.removeItem('allday-color-labels') } catch { /* 무시 */ }
-      try { localStorage.removeItem('allday-pomodoro') }    catch { /* 무시 */ }
-      useColorLabelStore.setState({ labels: {} })
-      usePomodoroStore.setState({
-        settings:    DEFAULT_SETTINGS,
-        sessionCount: 0,
-        isRunning:   false,
-        phase:       'work',
-        secondsLeft: DEFAULT_SETTINGS.workMinutes * 60,
-      })
-    }
-
     if (!user) {
+      if (prev !== undefined && prev !== null) {
+        // 로그아웃: 메모리만 초기화 — localStorage는 보존해 재로그인 시 설정 복원
+        useColorLabelStore.setState({ labels: {} })
+        usePomodoroStore.setState({
+          settings:    DEFAULT_SETTINGS,
+          sessionCount: 0,
+          isRunning:   false,
+          phase:       'work',
+          secondsLeft: DEFAULT_SETTINGS.workMinutes * 60,
+        })
+      }
       setCalendarUserId(null)
       setTodoUserId(null)
       setEvents([])
       setTodos([])
       setCalendarLoading(false)
       setTodoLoading(false)
+      setCalendarError(false)
+      setTodoError(false)
       return
     }
 
+    // UID별 키로 일회성 마이그레이션 (스코프 없는 기존 키 → UID 스코프 키)
+    migrateUnscopedKey('allday-color-labels', `allday-color-labels:${uid}`)
+    migrateUnscopedKey('allday-pomodoro',     `allday-pomodoro:${uid}`)
+
+    // 이 사용자의 localStorage 공간으로 전환 후 rehydrate
+    useColorLabelStore.persist.setOptions({ name: `allday-color-labels:${uid}` })
+    useColorLabelStore.persist.rehydrate()
+
+    usePomodoroStore.persist.setOptions({ name: `allday-pomodoro:${uid}` })
+    usePomodoroStore.persist.rehydrate()
+
     setCalendarUserId(user.uid)
     setTodoUserId(user.uid)
-
-    // Firestore 구독 실패 시 로딩 해제 — 안 하면 isLoading이 영원히 true
-    const unsubCalendar = subscribeCalendar(
-      user.uid,
-      setEvents,
-      (e) => { console.error('[calendar]', e); setCalendarLoading(false); toast.error('캘린더를 불러오지 못했어요.') }
-    )
-    const unsubTodos = subscribeTodos(
-      user.uid,
-      setTodos,
-      (e) => { console.error('[todos]', e); setTodoLoading(false); toast.error('할일을 불러오지 못했어요.') }
-    )
-
-    return () => {
-      // 각각 try-catch로 감싸 하나가 실패해도 나머지가 실행되도록 보장
-      try { unsubCalendar() } catch { /* 무시 */ }
-      try { unsubTodos() }    catch { /* 무시 */ }
-    }
+    // 재로그인/계정 전환 시 로딩 상태로 리셋
+    setCalendarLoading(true)
+    setTodoLoading(true)
+    setCalendarError(false)
+    setTodoError(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
+
+  // Effect 2: 캘린더 구독 — user 변경 또는 재시도 토큰 변경 시 재구독
+  useEffect(() => {
+    if (!user) return
+    const unsub = subscribeCalendar(
+      user.uid, setEvents,
+      (e) => { console.error('[calendar]', e); setCalendarFailed() }
+    )
+    return () => { try { unsub() } catch { /* 무시 */ } }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, calRetryToken])
+
+  // Effect 3: 할일 구독 — user 변경 또는 재시도 토큰 변경 시 재구독
+  useEffect(() => {
+    if (!user) return
+    const unsub = subscribeTodos(
+      user.uid, setTodos,
+      (e) => { console.error('[todos]', e); setTodoFailed() }
+    )
+    return () => { try { unsub() } catch { /* 무시 */ } }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, todoRetryToken])
 
   return <>{children}</>
 }

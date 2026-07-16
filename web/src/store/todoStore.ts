@@ -15,9 +15,14 @@ type TodoStore = {
   todos: Todo[]
   userId: string | null
   isLoading: boolean
+  fetchError: boolean
+  retryToken: number
   setUserId: (id: string | null) => void
   setTodos: (todos: Todo[]) => void
   setLoading: (v: boolean) => void
+  setFetchError: (v: boolean) => void
+  setSubscriptionFailed: () => void
+  requestRetry: () => void
   addTodo: (todo: Todo) => void
   updateTodo: (id: string, data: Partial<Todo>) => void
   toggleTodo: (id: string) => void
@@ -29,10 +34,15 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
   todos: [],
   userId: null,
   isLoading: true,
+  fetchError: false,
+  retryToken: 0,
 
   setUserId: (id) => set({ userId: id }),
-  setTodos: (todos) => set({ todos, isLoading: false }),
+  setTodos: (todos) => set({ todos, isLoading: false, fetchError: false }),
   setLoading: (v) => set({ isLoading: v }),
+  setFetchError: (v) => set({ fetchError: v }),
+  setSubscriptionFailed: () => set({ isLoading: false, fetchError: true }),
+  requestRetry: () => set((s) => ({ isLoading: true, fetchError: false, retryToken: s.retryToken + 1 })),
 
   addTodo: (todo) => {
     const { userId } = get()

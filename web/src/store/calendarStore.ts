@@ -13,10 +13,15 @@ type CalendarStore = {
   events: CalendarEvent[]
   userId: string | null
   isLoading: boolean
+  fetchError: boolean
+  retryToken: number
   pendingIds: Set<string>
   setUserId: (id: string | null) => void
   setEvents: (events: CalendarEvent[]) => void
   setLoading: (v: boolean) => void
+  setFetchError: (v: boolean) => void
+  setSubscriptionFailed: () => void
+  requestRetry: () => void
   addEvent: (event: CalendarEvent) => void
   updateEvent: (id: string, event: Partial<CalendarEvent>) => void
   deleteEvent: (id: string) => void
@@ -26,11 +31,16 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   events: [],
   userId: null,
   isLoading: true,
+  fetchError: false,
+  retryToken: 0,
   pendingIds: new Set(),
 
   setUserId: (id) => set({ userId: id }),
-  setEvents: (events) => set({ events, isLoading: false }),
+  setEvents: (events) => set({ events, isLoading: false, fetchError: false }),
   setLoading: (v) => set({ isLoading: v }),
+  setFetchError: (v) => set({ fetchError: v }),
+  setSubscriptionFailed: () => set({ isLoading: false, fetchError: true }),
+  requestRetry: () => set((s) => ({ isLoading: true, fetchError: false, retryToken: s.retryToken + 1 })),
 
   addEvent: (event) => {
     const { userId } = get()

@@ -1,9 +1,5 @@
 'use client'
 
-// 주간 캘린더 뷰 — 7일을 가로로 나열하고 시간대별로 이벤트를 표시한다.
-// - 마우스/터치 드래그로 시작~끝 시간을 선택해 일정 추가 가능
-// - 15분 단위 스냅으로 정렬됨
-// - 종일 이벤트(startTime 없음)는 상단 별도 영역에 표시
 import { useMemo, useRef, useState, useCallback, useEffect, useLayoutEffect, Fragment } from 'react'
 import { toDateStr, todayStr } from '@/lib/date'
 import type { CalendarEvent } from '@/types'
@@ -11,7 +7,7 @@ import type { CalendarEvent } from '@/types'
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 const HOUR_HEIGHT = 64
-const SNAP = 15 // 분 단위 스냅
+const SNAP = 15
 
 type Props = {
   weekStart: Date
@@ -87,7 +83,6 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
     [dateStrs, eventsByDate]
   )
 
-  // Y 위치 → 분 변환 (컬럼 기준)
   const yToMinutes = useCallback((colEl: HTMLDivElement, clientY: number): number => {
     const rect = colEl.getBoundingClientRect()
     const y = Math.max(0, clientY - rect.top)
@@ -96,7 +91,7 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
 
   // PointerEvent로 통합 — Mac 트랙패드/Windows 마우스/터치스크린 모두 처리
   const handlePointerDown = useCallback((dateStr: string, colIdx: number, e: React.PointerEvent) => {
-    if (!e.isPrimary) return  // 멀티터치 무시
+    if (!e.isPrimary) return
     if ((e.target as HTMLElement).closest('[data-event]')) return
     e.preventDefault()
     // setPointerCapture: 드래그 중 포인터가 요소 밖으로 나가도 이벤트 유지 (Mac/Windows 공통)
@@ -149,7 +144,6 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden border border-neutral-800 rounded-xl">
-      {/* 요일 헤더 */}
       <div className="flex shrink-0 border-b border-neutral-800 bg-neutral-900">
         <div className="w-14 shrink-0" />
         {days.map((day, i) => {
@@ -178,7 +172,6 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
         })}
       </div>
 
-      {/* 종일 이벤트 */}
       {hasAllDay && (
         <div className="flex shrink-0 border-b border-neutral-800 bg-neutral-900/50 min-h-[32px]">
           <div className="w-14 shrink-0 flex items-center justify-end pr-2">
@@ -202,10 +195,8 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
         </div>
       )}
 
-      {/* 시간 그리드 */}
       <div className="flex-1 overflow-y-auto">
         <div className="flex" style={{ height: HOUR_HEIGHT * 24 }}>
-          {/* 시간 레이블 */}
           <div className="w-14 shrink-0 relative select-none">
             {HOURS.map((h) => (
               <Fragment key={h}>
@@ -225,7 +216,6 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
             ))}
           </div>
 
-          {/* 날짜 컬럼 */}
           {dateStrs.map((dateStr, colIdx) => {
             const timedEvents = eventsByDate[dateStr]?.timed ?? []
             const isPreviewCol = dragPreview?.date === dateStr
@@ -244,7 +234,6 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
                 style={{ cursor: dragPreview ? 'ns-resize' : 'crosshair' }}
                 onPointerDown={(e) => handlePointerDown(dateStr, colIdx, e)}
               >
-                {/* 시간 구분선 */}
                 {HOURS.map((h) => (
                   <div key={h} className="absolute left-0 right-0 border-t border-neutral-800/60" style={{ top: h * HOUR_HEIGHT }} />
                 ))}
@@ -252,7 +241,6 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
                   <div key={`${h}-h`} className="absolute left-0 right-0 border-t border-neutral-800/30 border-dashed" style={{ top: h * HOUR_HEIGHT + HOUR_HEIGHT / 2 }} />
                 ))}
 
-                {/* 드래그 프리뷰 */}
                 {isPreviewCol && previewH > 0 && (
                   <div
                     className="absolute left-0.5 right-0.5 rounded-md pointer-events-none z-10 border border-blue-400/60"
@@ -270,7 +258,6 @@ export default function WeekView({ weekStart, events, holidays, onDayClick, onEv
                   </div>
                 )}
 
-                {/* 이벤트 */}
                 {timedEvents.map((ev) => {
                   if (!ev.startTime) return null
                   const startMin = timeToMinutes(ev.startTime)

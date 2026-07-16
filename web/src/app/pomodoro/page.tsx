@@ -1,9 +1,5 @@
 'use client'
 
-// 포모도로 타이머 페이지
-// 데스크톱: 왼쪽(모드/설정) + 중앙(타이머) + 오른쪽(통계) 3단 레이아웃
-// 모바일: 중앙 타이머만 표시, 상단에 모드 선택 탭 추가
-// 타이머 숫자를 클릭해 시간을 직접 입력할 수 있다.
 import { useState, useEffect, useRef } from 'react'
 import { Play, Pause, RotateCcw, SkipForward, Settings } from 'lucide-react'
 import { usePomodoroStore } from '@/store/pomodoroStore'
@@ -105,7 +101,6 @@ export default function PomodoroPage() {
       totalSecs = Math.max(0, Math.min(mins, 99)) * 60  // 음수·초과 방지
     } else if (/^\d{1,2}:\d{2}$/.test(raw)) {
       const [m, s] = raw.split(':').map(Number)
-      // 분·초 각각 범위 클램프
       totalSecs = Math.max(0, Math.min(m, 99)) * 60 + Math.max(0, Math.min(s, 59))
     } else {
       setEditingTime(false)
@@ -124,7 +119,6 @@ export default function PomodoroPage() {
   return (
     <div className="relative flex flex-col min-h-screen overflow-hidden select-none">
 
-      {/* 배경 ambient */}
       <div className="absolute inset-0 pointer-events-none transition-all duration-1000"
         style={{ background: `radial-gradient(ellipse 900px 600px at 50% 40%, ${cfg.glowColor}12 0%, transparent 70%)` }} />
       <div className="absolute inset-0 pointer-events-none"
@@ -132,7 +126,6 @@ export default function PomodoroPage() {
       <div className="absolute inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse 300px 300px at 85% 20%, rgba(14,165,233,0.05) 0%, transparent 60%)' }} />
 
-      {/* 장식용 큰 원들 */}
       <div className="absolute pointer-events-none transition-all duration-1000"
         style={{ width: 700, height: 700, borderRadius: '50%', top: '50%', left: '50%', transform: 'translate(-50%, -52%)',
           border: `1px solid ${cfg.glowColor}0f` }} />
@@ -143,10 +136,8 @@ export default function PomodoroPage() {
         style={{ width: 420, height: 420, borderRadius: '50%', top: '50%', left: '50%', transform: 'translate(-50%, -52%)',
           border: `1px solid ${cfg.glowColor}09` }} />
 
-      {/* 메인 레이아웃 */}
       <div className="relative z-10 flex flex-1 flex-col lg:flex-row items-center justify-center gap-8 lg:gap-24 px-4 lg:px-16 py-6 lg:py-10 overflow-y-auto">
 
-        {/* 왼쪽 패널 — 모바일에서 숨김 */}
         <div className="hidden lg:flex flex-col gap-8 w-52 shrink-0">
           <div>
             <p className="text-xs uppercase tracking-widest text-neutral-600 mb-3 font-medium">모드</p>
@@ -183,10 +174,8 @@ export default function PomodoroPage() {
           </div>
         </div>
 
-        {/* 중앙 타이머 */}
         <div className="flex flex-col items-center gap-6 lg:gap-10 shrink-0 w-full lg:w-auto">
 
-          {/* 모바일 전용 — 페이즈 탭 */}
           <div className="flex lg:hidden gap-1 p-0.5 bg-white/5 border border-white/10 rounded-xl">
             {(['work', 'shortBreak', 'longBreak'] as PomodoroPhase[]).map((p) => (
               <button key={p} onClick={() => { setRunning(false); setPhase(p) }}
@@ -198,9 +187,7 @@ export default function PomodoroPage() {
             ))}
           </div>
 
-          {/* 원형 타이머 */}
           <div className="relative flex items-center justify-center" style={{ width: `min(${SIZE}px, 80vw)`, height: `min(${SIZE}px, 80vw)` }}>
-            {/* 글로우 */}
             <div className="absolute inset-0 rounded-full transition-all duration-1000 pointer-events-none"
               style={{ boxShadow: isRunning ? `0 0 80px ${cfg.glowColor}22, 0 0 160px ${cfg.glowColor}11` : 'none' }} />
 
@@ -216,10 +203,8 @@ export default function PomodoroPage() {
                 </linearGradient>
               </defs>
 
-              {/* 트랙 */}
               <circle cx={SIZE/2} cy={SIZE/2} r={R} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={SW} />
 
-              {/* 진행 링 */}
               <circle cx={SIZE/2} cy={SIZE/2} r={R} fill="none"
                 stroke="url(#ring-grad)" strokeWidth={SW} strokeLinecap="round"
                 strokeDasharray={CIRC} strokeDashoffset={dashOffset}
@@ -227,7 +212,6 @@ export default function PomodoroPage() {
                 style={{ transition: 'stroke-dashoffset 0.8s linear' }} />
             </svg>
 
-            {/* 중앙 내용 */}
             <div className="relative flex flex-col items-center gap-3">
               {editingTime ? (
                 <input
@@ -263,7 +247,6 @@ export default function PomodoroPage() {
             </div>
           </div>
 
-          {/* 컨트롤 */}
           <div className="flex items-center gap-6">
             <button onClick={() => { setRunning(false); setSecondsLeft(totalSeconds) }}
               className="w-14 h-14 rounded-2xl flex items-center justify-center text-neutral-600 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 transition-all">
@@ -286,7 +269,6 @@ export default function PomodoroPage() {
             </button>
           </div>
 
-          {/* 세션 도트 */}
           <div className="flex items-center gap-2">
             {Array.from({ length: settings.sessionsBeforeLongBreak }, (_, i) => (
               <div key={i} className="rounded-full transition-all duration-500"
@@ -299,7 +281,6 @@ export default function PomodoroPage() {
           </div>
         </div>
 
-        {/* 오른쪽 패널 — 모바일에서 숨김 */}
         <div className="hidden lg:flex flex-col gap-8 w-52 shrink-0">
           <div>
             <p className="text-xs uppercase tracking-widest text-neutral-600 mb-3 font-medium">오늘의 기록</p>

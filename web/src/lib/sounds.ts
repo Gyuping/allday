@@ -1,7 +1,3 @@
-// 포모도로 타이머 완료 시 재생되는 효과음
-// 브라우저 내장 Web Audio API로 직접 사운드를 합성한다 (파일 없이 동작).
-// 맥/Safari autoplay 정책 대응: 공유 AudioContext를 사용자 제스처 시 미리 활성화한다.
-
 let sharedCtx: AudioContext | null = null
 
 function getCtx(): AudioContext | null {
