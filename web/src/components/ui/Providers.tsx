@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCalendarStore } from '@/store/calendarStore'
 import { useTodoStore } from '@/store/todoStore'
+import { useColorLabelStore } from '@/store/colorLabelStore'
+import { usePomodoroStore, DEFAULT_SETTINGS } from '@/store/pomodoroStore'
 import { subscribeCalendar } from '@/lib/firestore/calendar'
 import { subscribeTodos } from '@/lib/firestore/todos'
 import { useEventReminders } from '@/hooks/useEventReminders'
@@ -15,7 +17,29 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const { setUserId: setCalendarUserId, setEvents, setLoading: setCalendarLoading } = useCalendarStore()
   const { setUserId: setTodoUserId, setTodos, setLoading: setTodoLoading } = useTodoStore()
+
+  // 이전 사용자 UID 추적 — 계정이 바뀌면 로컬 전용 스토어를 초기화해 계정 간 데이터 혼합 방지
+  const prevUidRef = useRef<string | null | undefined>(undefined)
+
   useEffect(() => {
+    const uid = user?.uid ?? null
+    const prev = prevUidRef.current
+    prevUidRef.current = uid
+
+    if (prev !== undefined && prev !== null && prev !== uid) {
+      // 이전 계정이 있었는데 다른 계정(또는 로그아웃)으로 바뀐 경우 — localStorage 제거 및 메모리 리셋
+      try { localStorage.removeItem('allday-color-labels') } catch { /* 무시 */ }
+      try { localStorage.removeItem('allday-pomodoro') }    catch { /* 무시 */ }
+      useColorLabelStore.setState({ labels: {} })
+      usePomodoroStore.setState({
+        settings:    DEFAULT_SETTINGS,
+        sessionCount: 0,
+        isRunning:   false,
+        phase:       'work',
+        secondsLeft: DEFAULT_SETTINGS.workMinutes * 60,
+      })
+    }
+
     if (!user) {
       setCalendarUserId(null)
       setTodoUserId(null)

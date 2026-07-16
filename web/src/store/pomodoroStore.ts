@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { PomodoroSettings, PomodoroPhase } from '@/types'
 
-const DEFAULT_SETTINGS: PomodoroSettings = {
+export const DEFAULT_SETTINGS: PomodoroSettings = {
   workMinutes: 50,
   shortBreakMinutes: 5,
   longBreakMinutes: 15,
