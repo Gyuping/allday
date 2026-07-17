@@ -7,6 +7,8 @@ import {
 } from 'firebase/auth'
 import { FirebaseError } from 'firebase/app'
 import { db } from '@/lib/firebase'
+import { useColorLabelStore } from '@/store/colorLabelStore'
+import { usePomodoroStore, DEFAULT_SETTINGS } from '@/store/pomodoroStore'
 
 const CHUNK = 500
 
@@ -37,6 +39,19 @@ export function deleteLocalStorage(uid: string) {
   ].forEach((key) => {
     try { localStorage.removeItem(key) } catch { /* ignore */ }
   })
+
+  // localStorage 삭제만으로는 현재 페이지 세션의 Zustand 인메모리 상태가 유지됨
+  // → 재로그인 후 이전 데이터가 화면에 남는 문제 방지를 위해 인메모리도 초기화
+  try { useColorLabelStore.setState({ labels: {} }) } catch { /* ignore */ }
+  try {
+    usePomodoroStore.setState({
+      settings: DEFAULT_SETTINGS,
+      sessionCount: 0,
+      phase: 'work',
+      isRunning: false,
+      secondsLeft: DEFAULT_SETTINGS.workMinutes * 60,
+    })
+  } catch { /* ignore */ }
 }
 
 // reauthenticateWithPopup은 다른 계정 선택 시 auth/user-mismatch를 자체 발생시키나
