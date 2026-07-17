@@ -7,8 +7,8 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https://lh3.googleusercontent.com",
   "font-src 'self'",
-  // Firebase Auth + Firestore + 공휴일 API
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://apis.data.go.kr",
+  // Firebase Auth + Firestore + 공휴일 API + Sentry
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://apis.data.go.kr https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
   // Firebase Auth가 인증 지속성을 위해 *.firebaseapp.com iframe을 사용
   "frame-src https://*.firebaseapp.com",
   "object-src 'none'",

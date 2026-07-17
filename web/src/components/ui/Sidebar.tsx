@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LogOut, RefreshCw, ChevronUp } from 'lucide-react'
+import { LogOut, RefreshCw, ChevronUp, Mail } from 'lucide-react'
 import { NAV_ITEMS } from '@/constants/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -57,6 +57,16 @@ export default function Sidebar() {
           )
         })}
       </nav>
+
+      <div className="px-3 pb-2">
+        <a
+          href={`mailto:u48743499@gmail.com?subject=${encodeURIComponent('AllDay 피드백')}&body=${encodeURIComponent('[ 문의 유형: 버그 신고 / 기능 요청 / 기타 ]\n\n[ 페이지 / 기능 ]\n\n[ 문제 설명 ]\n\n[ 기기 및 브라우저 ]\n\n[ 재현 방법 ]')}`}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-neutral-500 hover:bg-neutral-800 hover:text-neutral-300 transition-colors"
+        >
+          <Mail size={15} />
+          피드백 보내기
+        </a>
+      </div>
 
       <div className="p-3 border-t border-neutral-800 relative">
         {showMenu && (
