@@ -44,6 +44,12 @@ export default function LoginScreen() {
           <p className="text-xs text-neutral-600 text-center">
             로그인하면 모든 기기에서 데이터가 동기화돼요
           </p>
+          <a
+            href="/privacy"
+            className="text-xs text-neutral-700 hover:text-neutral-500 transition-colors"
+          >
+            개인정보처리방침
+          </a>
         </div>
       </div>
     </div>

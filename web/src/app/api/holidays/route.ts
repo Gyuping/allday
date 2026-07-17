@@ -65,5 +65,11 @@ export async function GET(request: NextRequest) {
     holidays[dateStr] = item.dateName
   }
 
-  return NextResponse.json(holidays)
+  return NextResponse.json(holidays, {
+    headers: {
+      // s-maxage: Vercel CDN 캐시 (같은 연도 반복 요청 시 Function 미호출)
+      // stale-while-revalidate: 만료 후 최대 7일간 stale 응답 제공하며 백그라운드 갱신
+      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+    },
+  })
 }

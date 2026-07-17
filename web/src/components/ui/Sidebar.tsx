@@ -3,14 +3,16 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LogOut, RefreshCw, ChevronUp, Mail } from 'lucide-react'
+import { LogOut, RefreshCw, ChevronUp, Mail, Trash2 } from 'lucide-react'
 import { NAV_ITEMS } from '@/constants/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import DeleteAccountModal from './DeleteAccountModal'
 
 export default function Sidebar() {
   const pathname = usePathname()
   const { user, logout, signInWithGoogle } = useAuth()
   const [showMenu, setShowMenu] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const handleSwitchAccount = async () => {
     setShowMenu(false)
@@ -86,7 +88,18 @@ export default function Sidebar() {
               <LogOut size={14} />
               로그아웃
             </button>
+            <div className="h-px bg-neutral-700" />
+            <button
+              onClick={() => { setShowMenu(false); setShowDeleteModal(true) }}
+              className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-neutral-700 transition-colors"
+            >
+              <Trash2 size={14} />
+              계정 삭제
+            </button>
           </div>
+        )}
+        {showDeleteModal && (
+          <DeleteAccountModal onClose={() => setShowDeleteModal(false)} />
         )}
 
         <button
