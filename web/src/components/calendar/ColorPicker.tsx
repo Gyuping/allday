@@ -31,7 +31,10 @@ export default function ColorPicker({ value, onChange }: Props) {
 
   return (
     <div>
-      <label className="text-xs text-neutral-400 mb-2 block">색상</label>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-xs text-neutral-400">색상</label>
+        <span className="text-[10px] text-neutral-600">더블클릭 → 이름 설정</span>
+      </div>
       <div className="grid grid-cols-8 gap-2">
         {PRESET_COLORS.map((c) => {
           const label = labels[c]
