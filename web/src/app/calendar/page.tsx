@@ -14,7 +14,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import FetchErrorBanner from '@/components/ui/FetchErrorBanner'
 import { useHolidays } from '@/hooks/useHolidays'
 import { toDateStr, dateFromStr } from '@/lib/date'
-import { CATEGORIES } from '@/lib/categories'
+import { useCategoryStore } from '@/store/categoryStore'
 import type { CalendarEvent } from '@/types'
 import { MONTH_NAMES } from '@/constants/calendar'
 
@@ -57,6 +57,7 @@ export default function CalendarPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const { events, updateEvent, isLoading, fetchError, requestRetry } = useCalendarStore()
   const todos = useTodoStore((s) => s.todos)
+  const categories = useCategoryStore((s) => s.categories)
   // 현재 뷰에서 실제 보이는 연도 계산 — 주간/일간 뷰에서 연도를 넘어도 올바른 공휴일 로드
   const effectiveYear = useMemo(() => {
     if (viewMode === 'week') return weekStart.getFullYear()
@@ -85,6 +86,14 @@ export default function CalendarPage() {
     todos.forEach((t) => { if (t.completedAt) set.add(t.completedAt) })
     return set
   }, [todos])
+
+  // 카테고리 삭제 후 해당 카테고리가 필터로 선택돼 있으면 초기화
+  useEffect(() => {
+    if (activeCategory !== null && !categories.some((c) => c.id === activeCategory)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveCategory(null)
+    }
+  }, [categories, activeCategory])
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11) }
@@ -229,7 +238,7 @@ export default function CalendarPage() {
         >
           전체
         </button>
-        {CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}

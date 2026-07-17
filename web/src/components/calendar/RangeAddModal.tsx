@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { X, Check, CalendarDays } from 'lucide-react'
 import { useCalendarStore } from '@/store/calendarStore'
 import { getDateRange, formatDateLabel } from '@/lib/date'
-import { CATEGORIES } from '@/lib/categories'
+import { useCategoryStore } from '@/store/categoryStore'
 import ColorPicker from './ColorPicker'
 import { PRESET_COLORS } from '@/lib/colors'
 import { REMINDER_OPTIONS } from '@/constants/reminders'
@@ -19,6 +19,7 @@ type Props = {
 
 export default function RangeAddModal({ startDate, endDate, onClose }: Props) {
   const { addEvent } = useCalendarStore()
+  const categories = useCategoryStore((s) => s.categories)
   const [title, setTitle] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
@@ -105,7 +106,7 @@ export default function RangeAddModal({ startDate, endDate, onClose }: Props) {
             <div>
               <label className="text-xs text-neutral-400 mb-1.5 block">카테고리</label>
               <div className="flex gap-1.5 flex-wrap">
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <button
                     key={cat.id}
                     type="button"

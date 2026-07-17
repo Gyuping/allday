@@ -4,10 +4,12 @@ import { useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCalendarStore } from '@/store/calendarStore'
 import { useTodoStore } from '@/store/todoStore'
+import { useCategoryStore } from '@/store/categoryStore'
 import { useColorLabelStore } from '@/store/colorLabelStore'
 import { usePomodoroStore, DEFAULT_SETTINGS } from '@/store/pomodoroStore'
 import { subscribeCalendar } from '@/lib/firestore/calendar'
 import { subscribeTodos } from '@/lib/firestore/todos'
+import { subscribeCategories } from '@/lib/firestore/categories'
 import { useEventReminders } from '@/hooks/useEventReminders'
 
 function migrateUnscopedKey(oldKey: string, newKey: string) {
@@ -35,6 +37,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     setSubscriptionFailed: setTodoFailed,
     retryToken: todoRetryToken,
   } = useTodoStore()
+  const {
+    setUserId: setCategoryUserId, setCategories,
+    setLoading: setCategoryLoading, setFetchError: setCategoryError,
+    setSubscriptionFailed: setCategoryFailed,
+    retryToken: catRetryToken,
+  } = useCategoryStore()
 
   const prevUidRef = useRef<string | null | undefined>(undefined)
 
@@ -58,12 +66,16 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       }
       setCalendarUserId(null)
       setTodoUserId(null)
+      setCategoryUserId(null)
       setEvents([])
       setTodos([])
+      setCategories([])
       setCalendarLoading(false)
       setTodoLoading(false)
+      setCategoryLoading(false)
       setCalendarError(false)
       setTodoError(false)
+      setCategoryError(false)
       return
     }
 
@@ -80,11 +92,14 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
     setCalendarUserId(user.uid)
     setTodoUserId(user.uid)
+    setCategoryUserId(user.uid)
     // 재로그인/계정 전환 시 로딩 상태로 리셋
     setCalendarLoading(true)
     setTodoLoading(true)
+    setCategoryLoading(true)
     setCalendarError(false)
     setTodoError(false)
+    setCategoryError(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
@@ -109,6 +124,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     return () => { try { unsub() } catch { /* 무시 */ } }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, todoRetryToken])
+
+  // Effect 4: 카테고리 구독 — user 변경 또는 재시도 토큰 변경 시 재구독
+  useEffect(() => {
+    if (!user) return
+    const unsub = subscribeCategories(
+      user.uid, setCategories,
+      (e) => { console.error('[categories]', e); setCategoryFailed() }
+    )
+    return () => { try { unsub() } catch { /* 무시 */ } }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, catRetryToken])
 
   return <>{children}</>
 }

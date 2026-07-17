@@ -106,7 +106,21 @@ export default function CalendarGrid({
         if (a.date !== b.date) return a.date.localeCompare(b.date)
         return (b.endDate ?? b.date).localeCompare(a.endDate ?? a.date)
       })
-      sorted.forEach((ev, i) => slotMap.set(`${w}-${ev.id}`, i))
+      // Greedy interval coloring: 겹치는 이벤트끼리만 다른 슬롯, 겹치지 않으면 같은 슬롯 재사용
+      const assigned: { start: string; end: string; slot: number }[] = []
+      sorted.forEach((ev) => {
+        const evStart = ev.date
+        const evEnd   = ev.endDate ?? ev.date
+        const occupied = new Set(
+          assigned
+            .filter(({ start, end }) => evStart <= end && evEnd >= start)
+            .map(({ slot }) => slot)
+        )
+        let slot = 0
+        while (occupied.has(slot)) slot++
+        slotMap.set(`${w}-${ev.id}`, slot)
+        assigned.push({ start: evStart, end: evEnd, slot })
+      })
     }
     return slotMap
   }, [cells, eventsByDate, year, month])

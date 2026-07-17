@@ -5,7 +5,7 @@ import { X, Plus, ChevronRight, ChevronLeft, Trash2, Bell } from 'lucide-react'
 import { useCalendarStore } from '@/store/calendarStore'
 import { useTodoStore } from '@/store/todoStore'
 import { formatDateLabel, parseDateStr, getEventsForDate } from '@/lib/date'
-import { getCategoryById } from '@/lib/categories'
+import { useCategoryStore } from '@/store/categoryStore'
 import type { CalendarEvent } from '@/types'
 import CheckIcon from '@/components/ui/CheckIcon'
 import EventForm from './EventForm'
@@ -23,6 +23,7 @@ type Props = {
 }
 
 export default function DayDetailModal({ date, holidayName, initialEvent, startAdd, startTime, endTime, onClose }: Props) {
+  const categories = useCategoryStore((s) => s.categories)
   const { events, addEvent, updateEvent, deleteEvent } = useCalendarStore()
   const todos = useTodoStore((s) => s.todos)
   const completedTodos = useMemo(
@@ -103,7 +104,7 @@ export default function DayDetailModal({ date, holidayName, initialEvent, startA
                         <div className="flex items-center gap-1.5">
                           <p className="text-sm font-medium truncate">{ev.title}</p>
                           {ev.category && (() => {
-                            const cat = getCategoryById(ev.category)
+                            const cat = categories.find((c) => c.id === ev.category)
                             return cat ? (
                               <span
                                 className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-md font-medium"

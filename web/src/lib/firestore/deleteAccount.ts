@@ -25,6 +25,7 @@ async function deleteCollection(uid: string, name: string) {
 export async function deleteFirestoreData(uid: string) {
   await deleteCollection(uid, 'calendar')
   await deleteCollection(uid, 'todos')
+  await deleteCollection(uid, 'categories')
   // 상위 문서가 존재하면 삭제 (없으면 무해)
   await deleteDoc(doc(db, 'users', uid))
 }

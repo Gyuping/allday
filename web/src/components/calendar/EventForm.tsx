@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { Trash2, Check } from 'lucide-react'
-import { CATEGORIES } from '@/lib/categories'
+import { useState, useEffect } from 'react'
+import { Trash2, Check, X } from 'lucide-react'
 import { REMINDER_OPTIONS } from '@/constants/reminders'
 import { useNotificationPermission } from '@/hooks/useNotificationPermission'
+import { useCategoryStore } from '@/store/categoryStore'
 import ColorPicker from './ColorPicker'
+import CategoryManager from './CategoryManager'
 import TimeInput from '@/components/ui/TimeInput'
 
 export type EventFormData = {
@@ -49,7 +50,10 @@ export default function EventForm({
   onDelete,
 }: Props) {
   const { request: requestNotification } = useNotificationPermission()
+  const categories = useCategoryStore((s) => s.categories)
+  const [showCatManager, setShowCatManager] = useState(false)
   const [title, setTitle]       = useState(initialTitle)
+
   const [date, setDate]         = useState(initialDate)
   const [endDate, setEndDate]   = useState(initialEndDate)
   const [startTime, setStartTime] = useState(initialStartTime)
@@ -58,6 +62,14 @@ export default function EventForm({
   const [reminder, setReminder] = useState<number | undefined>(initialReminder)
   const [category, setCategory] = useState<string | undefined>(initialCategory)
   const [titleError, setTitleError] = useState(false)
+
+  // CategoryManager에서 현재 선택 카테고리를 삭제하면 선택 초기화
+  useEffect(() => {
+    if (category !== undefined && !categories.some((c) => c.id === category)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCategory(undefined)
+    }
+  }, [categories, category])
   const endDateError = endDate && endDate < date
 
   return (
@@ -86,24 +98,43 @@ export default function EventForm({
       </div>
 
       <div>
-        <label className="text-xs text-neutral-400 mb-1.5 block">카테고리</label>
-        <div className="flex gap-1.5 flex-wrap">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setCategory(category === cat.id ? undefined : cat.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                category === cat.id
-                  ? 'bg-white text-neutral-900'
-                  : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'
-              }`}
-            >
-              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-              {cat.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-xs text-neutral-400">카테고리</label>
+          <button type="button" onClick={() => setShowCatManager((v) => !v)}
+            className="text-[10px] text-neutral-600 hover:text-neutral-400 transition-colors">
+            {showCatManager ? '닫기' : '편집'}
+          </button>
         </div>
+        {showCatManager ? (
+          <div className="border border-neutral-700 rounded-xl p-3 bg-neutral-900">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-neutral-500">카테고리 관리</span>
+              <button type="button" onClick={() => setShowCatManager(false)}
+                className="text-neutral-600 hover:text-white transition-colors">
+                <X size={13} />
+              </button>
+            </div>
+            <CategoryManager />
+          </div>
+        ) : (
+          <div className="flex gap-1.5 flex-wrap">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategory(category === cat.id ? undefined : cat.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  category === cat.id
+                    ? 'bg-white text-neutral-900'
+                    : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'
+                }`}
+              >
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex gap-3">
