@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "My AllDay",
+    "slug": "allday",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "allday",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.allday.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0A",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.allday.app",
+      "predictiveBackGestureEnabled": false,
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.908860944655-5ud8c7pkb2776sfaqkr1lh0f6ulubnov"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "46001b12-8df0-45c5-8653-c179b9a56fca"
+      }
+    },
+    "owner": "gyu-ping"
+  }
+}
