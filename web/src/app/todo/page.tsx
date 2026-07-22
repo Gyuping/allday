@@ -202,13 +202,25 @@ export default function TodoPage() {
               <p className="text-sm">아직 할일이 없어요.</p>
               <button
                 onClick={() => setShowModal(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-neutral-900 text-sm font-medium hover:bg-neutral-100 transition-colors"
+                aria-label="할일 추가하기"
+                title="할일 추가하기"
+                className="flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500 text-white hover:bg-emerald-600 transition-colors shadow-lg"
               >
-                <Plus size={16} /> 할일 추가하기
+                <Plus size={24} />
               </button>
             </div>
           ) : (
-            <p className="text-sm">해당하는 할일이 없습니다.</p>
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-sm">해당하는 할일이 없습니다.</p>
+              <button
+                onClick={() => setShowModal(true)}
+                aria-label="할일 추가하기"
+                title="할일 추가하기"
+                className="flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500 text-white hover:bg-emerald-600 transition-colors shadow-lg"
+              >
+                <Plus size={24} />
+              </button>
+            </div>
           )}
         </div>
       ) : (
