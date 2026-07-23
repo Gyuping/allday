@@ -4,7 +4,7 @@ import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth'
 import {
   getFirestore, initializeFirestore,
-  persistentLocalCache, persistentMultipleTabManager,
+  persistentLocalCache, persistentSingleTabManager, memoryLocalCache,
   connectFirestoreEmulator, type Firestore,
 } from 'firebase/firestore'
 
@@ -30,12 +30,17 @@ if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
     // 에뮬레이터 환경에서는 IndexedDB 캐시 없이 기본 Firestore 사용
     _db = getFirestore(_app)
   } else {
+    // Safari: IndexedDB 멀티탭 잠금에서 hang이 빈번 → 메모리 캐시(IndexedDB 미사용)
+    // 그 외: 단일탭 IndexedDB 캐시 — 크로스탭 잠금 없이 오프라인 지원
+    // (persistentMultipleTabManager → persistentSingleTabManager로 변경: 락 경쟁 제거)
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome|Chromium/.test(navigator.userAgent)
+
     // HMR 재평가 시 initializeFirestore 중복 호출 방지 — 이미 초기화됐으면 getFirestore로 fallback
     try {
       _db = initializeFirestore(_app, {
-        localCache: persistentLocalCache({
-          tabManager: persistentMultipleTabManager(),
-        }),
+        localCache: isSafari
+          ? memoryLocalCache()
+          : persistentLocalCache({ tabManager: persistentSingleTabManager({}) }),
       })
     } catch {
       _db = getFirestore(_app)
