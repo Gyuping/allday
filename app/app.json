@@ -9,7 +9,8 @@
     "scheme": "allday",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.allday.app"
+      "bundleIdentifier": "com.allday.app",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,6 +21,7 @@
       },
       "package": "com.allday.app",
       "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -32,6 +34,21 @@
         "@react-native-google-signin/google-signin",
         {
           "iosUrlScheme": "com.googleusercontent.apps.908860944655-5ud8c7pkb2776sfaqkr1lh0f6ulubnov"
+        }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "forceStaticLinking": [
+              "RNFBApp",
+              "RNFBAuth",
+              "RNFBFirestore"
+            ]
+          }
         }
       ]
     ],

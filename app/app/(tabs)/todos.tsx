@@ -15,7 +15,7 @@ const FILTERS: { key: TodoFilter; label: string }[] = [
 ]
 
 export default function TodosScreen() {
-  const { todos, isLoading, addTodo, toggleTodo, deleteTodo } = useTodoStore()
+  const { todos, isLoading, fetchError, requestRetry, addTodo, toggleTodo, deleteTodo } = useTodoStore()
   const [filter, setFilter] = useState<TodoFilter>('all')
   const [input, setInput]   = useState('')
   const [adding, setAdding] = useState(false)
@@ -51,6 +51,17 @@ export default function TodosScreen() {
     return (
       <SafeAreaView style={styles.center}>
         <ActivityIndicator color={THEME.accent} />
+      </SafeAreaView>
+    )
+  }
+
+  if (fetchError) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Text style={styles.errorText}>불러오기 실패</Text>
+        <TouchableOpacity onPress={requestRetry} style={styles.retryBtn}>
+          <Text style={styles.retryBtnText}>다시 시도</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     )
   }
@@ -134,7 +145,17 @@ export default function TodosScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.bg },
-  center: { flex: 1, backgroundColor: THEME.bg, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, backgroundColor: THEME.bg, justifyContent: 'center', alignItems: 'center', gap: 12 },
+  errorText: { color: THEME.danger, fontSize: 14 },
+  retryBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: THEME.card,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: THEME.border,
+  },
+  retryBtnText: { color: THEME.text, fontSize: 13, fontWeight: '600' },
 
   header: {
     flexDirection: 'row',

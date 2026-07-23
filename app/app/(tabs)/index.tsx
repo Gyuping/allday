@@ -16,7 +16,7 @@ export default function CalendarScreen() {
   const [month, setMonth] = useState(() => new Date().getMonth())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
-  const { events, isLoading } = useCalendarStore()
+  const { events, isLoading, fetchError, requestRetry } = useCalendarStore()
   const categories = useCategoryStore((s) => s.categories)
 
   const today = todayStr()
@@ -57,6 +57,17 @@ export default function CalendarScreen() {
       <SafeAreaView style={styles.center}>
         <ActivityIndicator color={THEME.accent} />
         <Text style={styles.loadingText}>불러오는 중...</Text>
+      </SafeAreaView>
+    )
+  }
+
+  if (fetchError) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Text style={styles.errorText}>불러오기 실패</Text>
+        <TouchableOpacity onPress={requestRetry} style={styles.retryBtn}>
+          <Text style={styles.retryBtnText}>다시 시도</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     )
   }
@@ -179,6 +190,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.bg },
   center: { flex: 1, backgroundColor: THEME.bg, justifyContent: 'center', alignItems: 'center', gap: 12 },
   loadingText: { color: THEME.textMuted, fontSize: 14 },
+  errorText: { color: THEME.danger, fontSize: 14 },
+  retryBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: THEME.card,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: THEME.border,
+  },
+  retryBtnText: { color: THEME.text, fontSize: 13, fontWeight: '600' },
 
   header: {
     flexDirection: 'row',

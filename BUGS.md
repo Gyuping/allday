@@ -51,3 +51,19 @@
 | 2026-07-13 | `store/pomodoroStore.ts` | `secondsLeft`가 `DEFAULT_SETTINGS.workMinutes * 60`으로 초기화 → 설정 변경 후 새로고침 시 50:00으로 오표시, 링 progress 오류 | 🟢 낮음 | 해결완료 | `onRehydrateStorage`에서 `secondsLeft`를 persisted `settings.workMinutes * 60`으로 재설정 |
 | 2026-07-13 | `store/calendarStore.ts` | `updateEvent`에서 `pendingIds` 추가 시 클로저 캡처된 `next` 사용 → `set()` 함수형 업데이트와 패턴 불일치, 동시 set 배치 시 stale 가능성 | 🟢 낮음 | 해결완료 | `set((s) => { const ids = new Set(s.pendingIds); ids.add(id); ... })` 패턴으로 통일 |
 | 2026-07-13 | `store/calendarStore.ts` | `deleteEvent` 실패 롤백 시 `[...s.events, prev]`로 이벤트가 배열 맨 뒤로 이동 → 원래 위치 복원 안 됨 | 🟢 낮음 | 해결완료 | `findIndex`로 원래 인덱스 저장, `splice(idx, 0, prev)`로 원위치에 복원 |
+| 2026-07-22 | `app/todo/page.tsx` | 필터/태그 결과 0개일 때 "해당하는 할일이 없습니다." 텍스트만 뜨고 추가 버튼 없음 | 🟢 낮음 | 해결완료 | 전체 0개 케이스와 동일하게 원형(`rounded-full bg-emerald-500`) + 버튼 추가 |
+| 2026-07-22 | `contexts/AuthContext.tsx` | Google 로그인(`signInWithPopup`) 시 콘솔에 `Cross-Origin-Opener-Policy policy would block the window.closed/close call` 경고 | 🟢 낮음 | 확인됨(조치 불필요) | 원인은 accounts.google.com 자체 COOP 헤더 — AllDay 쪽엔 COOP 헤더 미설정. Firebase SDK가 postMessage fallback으로 로그인 정상 처리(사용자 확인: 로그인 정상 동작). 콘솔 노이즈일 뿐 실제 버그 아님 |
+| 2026-07-22 | `app/calendar/page.tsx` | 월/주/일 뷰 `onEventClick`이 전부 `setDayModal({ date: ev.date })`만 호출, `initialEvent` 미전달 → 일정 클릭해도 목록 뷰로만 열리고 편집 화면 직행 안 됨. BUGS.md #43(2026-07-11)에 "해결완료"로 기록됐던 것과 실제 코드가 불일치(회귀) — 직접 재확인함 | 🔴 심각 | 미해결 | - |
+| 2026-07-22 | `components/calendar/WeekView.tsx` | 잘못된 형식의 `startTime`이 들어온 이벤트에 대해 `DayView.tsx`는 렌더 스킵하지만 `WeekView.tsx`는 `startMin` NaN 검증이 없어 위치가 깨진 채 렌더링됨 (뷰 간 검증 불일치) | 🟡 보통 | 미해결 | - |
+| 2026-07-22 | `components/calendar/EventForm.tsx`, `RangeAddModal.tsx` | 종료시간 < 시작시간으로 저장 가능 (종료일<시작일만 검증, 시간 순서 검증 없음) → 화면에는 자동 보정된 시간이 표시되어 저장값과 표시값이 달라짐 | 🟢 낮음 | 미해결 | - |
+| 2026-07-22 | `store/calendarStore.ts` | `updateEvent` 호출 중 같은 id로 또 수정 요청이 오면 `pendingIds.has(id)`일 때 조용히 무시(toast/재시도 없음) → 두 번째 수정 내용이 로컬·서버 어디에도 반영되지 않고 사라짐 | 🟡 보통 | 미해결 | - |
+| 2026-07-22 | `store/todoStore.ts` | `toggleTodo`/`updateTodo`/`clearAll` 롤백 시 요청 시작 시점의 전체 스냅샷으로 덮어씀 → 롤백 대상 필드 외에, 그 사이 다른 탭/요청에서 성공한 변경까지 함께 사라짐(동시 편집 시 데이터 손실) | 🟡 보통 | 미해결 | - |
+| 2026-07-22 | `store/todoStore.ts` | `deleteTodo` 롤백 시 요청 시작 시점에 캡처한 `idx`를 그 사이 배열이 바뀐 뒤에도 그대로 사용 → 복원 위치가 부정확해질 수 있음 | 🟢 낮음 | 미해결 | - |
+| 2026-07-22 | `components/todo/AddTodoModal.tsx`, `EditTodoModal.tsx` | 제목/태그 글자수 제한 없음 → 매우 긴 텍스트 입력 시 Firestore 1MB 문서 한도 초과로 저장 실패, 사용자는 원인을 모른 채 같은 입력 재시도만 반복 | 🟢 낮음 | 미해결 | - |
+| 2026-07-22 | `contexts/AuthContext.tsx` | `auth/popup-blocked` catch 안에서 호출하는 `signInWithRedirect` 자체가 실패하면(서드파티 쿠키 차단 등) 별도 try/catch가 없어 unhandled rejection, `loginError` 미설정 → 로그인 버튼이 반응 없는 것처럼 보임 | 🟡 보통 | 미해결 | - |
+| 2026-07-22 | `contexts/AuthContext.tsx` | `getRedirectResult` 실패 시(`popup-closed-by-user`/`cancelled-popup-request` 이외 에러코드) `console.error`만 호출, `setLoginError` 미호출 → 로그인 실패가 사용자에게 조용히 삼켜짐 | 🟡 보통 | 미해결 | - |
+| 2026-07-22 | `lib/firebase.ts` | `auth`/`db`를 `_auth!`/`_db!`로 non-null 단정 → 환경변수 누락 등으로 실제 undefined일 때 `if (!auth)` 가드 없는 다른 코드에서 처리되지 않은 raw TypeError로 크래시 | 🟡 보통 | 미해결 | - |
+| 2026-07-22 | `store/toastStore.ts` | `crypto.randomUUID()`가 비보안 컨텍스트(사설 IP 등)에서 예외를 던짐 → 토스트 자체가 무력화되고, 각지의 `catch { toast.error(...) }` 에러 안내도 함께 조용히 실패 | 🟢 낮음 | 미해결 | - |
+| 2026-07-22 | `store/pomodoroStore.ts` | `partialize`가 `phase`를 저장하지 않음 → 휴식 중 새로고침하면 항상 `phase: 'work'`로 리셋되지만 `sessionCount`는 유지되어 진행 상태가 어긋나 보임 | 🟢 낮음 | 미해결 | - |
+| 2026-07-22 | `app/pomodoro/page.tsx` | 총 집중시간 통계를 `sessionCount * settings.workMinutes`(현재 설정값)로 계산 → 설정 변경 시 과거에 완료한 세션의 집계 시간까지 소급 변경됨 | 🟡 보통 | 미해결 | - |
+| 2026-07-22 | `store/pomodoroStore.ts` | 여러 탭 동시 사용 시 `storage` 이벤트 리스너 없음 → 한 탭의 오래된 상태로 설정 변경 시 다른 탭에서 완료한 `sessionCount`가 덮어써짐(lost update) | 🟢 낮음 | 미해결 | - |

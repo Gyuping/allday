@@ -34,6 +34,13 @@ yarn-error.*
 .env
 .env*.local
 
+# Firebase config (contains API keys/project IDs — injected via EAS secrets instead)
+GoogleService-Info.plist
+google-services.json
+
+# local dev/build artifacts
+*-qr.png
+
 # typescript
 *.tsbuildinfo
 

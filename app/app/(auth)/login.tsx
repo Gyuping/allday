@@ -4,12 +4,13 @@ import {
   ActivityIndicator, Alert,
 } from 'react-native'
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin'
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth'
+import { GoogleAuthProvider, signInWithCredential } from '@react-native-firebase/auth'
 import { auth } from '@/lib/firebase'
 import { THEME } from '@/lib/colors'
 
 GoogleSignin.configure({
   webClientId: '908860944655-1kgkelqbr0oh79eudt22i3e2vqbabr8f.apps.googleusercontent.com',
+  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
   offlineAccess: false,
 })
 
@@ -20,10 +21,12 @@ export default function LoginScreen() {
     setLoading(true)
     try {
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true })
-      const userInfo = await GoogleSignin.signIn()
-      const idToken = userInfo.data?.idToken
+      await GoogleSignin.signIn()
+      // @react-native-firebase/auth의 GoogleAuthProvider.credential은 accessToken도 필수라
+      // signIn() 응답의 idToken만으론 부족함 — getTokens()로 둘 다 받아와야 함
+      const { idToken, accessToken } = await GoogleSignin.getTokens()
       if (!idToken) throw new Error('idToken 없음')
-      const credential = GoogleAuthProvider.credential(idToken)
+      const credential = GoogleAuthProvider.credential(idToken, accessToken)
       await signInWithCredential(auth, credential)
     } catch (e: any) {
       if (e.code === statusCodes.SIGN_IN_CANCELLED) {

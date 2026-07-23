@@ -1,7 +1,7 @@
 import {
   collection, doc, onSnapshot,
   setDoc, updateDoc, deleteDoc, deleteField,
-} from 'firebase/firestore'
+} from '@react-native-firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { CalendarEvent } from '@/types'
 

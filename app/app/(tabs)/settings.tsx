@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
   SafeAreaView, ScrollView, Alert, ActivityIndicator,
 } from 'react-native'
-import { signOut } from 'firebase/auth'
+import { signOut } from '@react-native-firebase/auth'
 import { auth } from '@/lib/firebase'
 import { useCategoryStore } from '@/store/categoryStore'
 import { getEventCountByCategory } from '@/lib/firestore/categories'
@@ -11,7 +11,10 @@ import { THEME, PRESET_COLORS } from '@/lib/colors'
 import type { Category } from '@/lib/categories'
 
 export default function SettingsScreen() {
-  const { categories, userId, addCategory, updateCategory, deleteCategory } = useCategoryStore()
+  const {
+    categories, userId, fetchError, requestRetry,
+    addCategory, updateCategory, deleteCategory,
+  } = useCategoryStore()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft]         = useState({ label: '', color: PRESET_COLORS[0] as string })
   const [addMode, setAddMode]     = useState(false)
@@ -88,6 +91,15 @@ export default function SettingsScreen() {
         {/* 카테고리 섹션 */}
         <SectionHeader title="카테고리" />
         <View style={styles.card}>
+          {fetchError ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>불러오기 실패</Text>
+              <TouchableOpacity onPress={requestRetry} style={styles.retryBtn}>
+                <Text style={styles.retryBtnText}>다시 시도</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+          <>
           {categories.map((cat) =>
             editingId === cat.id ? (
               <View key={cat.id} style={styles.editRow}>
@@ -166,6 +178,8 @@ export default function SettingsScreen() {
               <Text style={styles.addCatBtnText}>+ 카테고리 추가</Text>
             </TouchableOpacity>
           )}
+          </>
+          )}
         </View>
 
         {/* 계정 섹션 */}
@@ -211,6 +225,24 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   headerTitle: { color: THEME.text, fontSize: 20, fontWeight: '700' },
+
+  errorBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+  },
+  errorText: { color: THEME.danger, fontSize: 14 },
+  retryBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: THEME.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: THEME.border2,
+  },
+  retryBtnText: { color: THEME.text, fontSize: 13, fontWeight: '600' },
 
   sectionTitle: {
     color: THEME.textMuted,

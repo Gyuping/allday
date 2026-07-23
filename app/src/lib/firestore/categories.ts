@@ -1,7 +1,7 @@
 import {
   collection, doc, setDoc, updateDoc, deleteDoc,
   onSnapshot, getDocs, query, where, writeBatch,
-} from 'firebase/firestore'
+} from '@react-native-firebase/firestore'
 import { db } from '@/lib/firebase'
 import { DEFAULT_CATEGORIES } from '@/lib/categories'
 import type { Category } from '@/lib/categories'

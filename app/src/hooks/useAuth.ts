@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth'
+import { onAuthStateChanged, signOut, type User } from '@react-native-firebase/auth'
 import { auth } from '@/lib/firebase'
 
 export function useAuth() {

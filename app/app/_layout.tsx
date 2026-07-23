@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { onAuthStateChanged } from 'firebase/auth'
+import { onAuthStateChanged } from '@react-native-firebase/auth'
 import { auth } from '@/lib/firebase'
 import { subscribeCalendar } from '@/lib/firestore/calendar'
 import { subscribeTodos } from '@/lib/firestore/todos'
