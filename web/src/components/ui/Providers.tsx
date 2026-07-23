@@ -103,36 +103,47 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
+  // Safari + IndexedDB persistentLocalCache hang 방어:
+  // 첫 콜백(성공/에러)이 SUBSCRIPTION_TIMEOUT_MS 내에 안 오면 자동으로 실패 처리
+  // → 사용자가 무한 스피너에 갇히는 것을 막고 재시도 UI로 전환
+  const SUBSCRIPTION_TIMEOUT_MS = 12_000
+
   // Effect 2: 캘린더 구독 — user 변경 또는 재시도 토큰 변경 시 재구독
   useEffect(() => {
     if (!user) return
+    const tid = setTimeout(() => setCalendarFailed(), SUBSCRIPTION_TIMEOUT_MS)
     const unsub = subscribeCalendar(
-      user.uid, setEvents,
-      (e) => { console.error('[calendar]', e); setCalendarFailed() }
+      user.uid,
+      (events) => { clearTimeout(tid); setEvents(events) },
+      (e) => { clearTimeout(tid); console.error('[calendar]', e); setCalendarFailed() }
     )
-    return () => { try { unsub() } catch { /* 무시 */ } }
+    return () => { clearTimeout(tid); try { unsub() } catch { /* 무시 */ } }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, calRetryToken])
 
   // Effect 3: 할일 구독 — user 변경 또는 재시도 토큰 변경 시 재구독
   useEffect(() => {
     if (!user) return
+    const tid = setTimeout(() => setTodoFailed(), SUBSCRIPTION_TIMEOUT_MS)
     const unsub = subscribeTodos(
-      user.uid, setTodos,
-      (e) => { console.error('[todos]', e); setTodoFailed() }
+      user.uid,
+      (todos) => { clearTimeout(tid); setTodos(todos) },
+      (e) => { clearTimeout(tid); console.error('[todos]', e); setTodoFailed() }
     )
-    return () => { try { unsub() } catch { /* 무시 */ } }
+    return () => { clearTimeout(tid); try { unsub() } catch { /* 무시 */ } }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, todoRetryToken])
 
   // Effect 4: 카테고리 구독 — user 변경 또는 재시도 토큰 변경 시 재구독
   useEffect(() => {
     if (!user) return
+    const tid = setTimeout(() => setCategoryFailed(), SUBSCRIPTION_TIMEOUT_MS)
     const unsub = subscribeCategories(
-      user.uid, setCategories,
-      (e) => { console.error('[categories]', e); setCategoryFailed() }
+      user.uid,
+      (cats) => { clearTimeout(tid); setCategories(cats) },
+      (e) => { clearTimeout(tid); console.error('[categories]', e); setCategoryFailed() }
     )
-    return () => { try { unsub() } catch { /* 무시 */ } }
+    return () => { clearTimeout(tid); try { unsub() } catch { /* 무시 */ } }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, catRetryToken])
 
