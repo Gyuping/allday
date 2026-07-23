@@ -258,7 +258,7 @@ export default function CalendarPage() {
           completedTodoDates={completedTodoDates}
           onDayClick={(date) => setDayModal({ date })}
           onDayDoubleClick={handleDayClick}
-          onEventClick={(ev) => setDayModal({ date: ev.date })}
+          onEventClick={(ev) => setDayModal({ date: ev.date, initialEvent: ev })}
           onEventDrop={(eventId, newDate) => {
             const ev = filteredEvents.find((e) => e.id === eventId)
             if (!ev) return
@@ -283,7 +283,7 @@ export default function CalendarPage() {
           events={filteredEvents}
           holidays={holidays}
           onDayClick={handleDayClick}
-          onEventClick={(ev) => setDayModal({ date: ev.date })}
+          onEventClick={(ev) => setDayModal({ date: ev.date, initialEvent: ev })}
           onSlotClick={(date, startTime, endTime) => setDayModal({ date, startAdd: true, startTime, endTime })}
         />
       )}
@@ -292,7 +292,7 @@ export default function CalendarPage() {
           date={viewDay}
           events={filteredEvents}
           holidays={holidays}
-          onEventClick={(ev) => setDayModal({ date: ev.date })}
+          onEventClick={(ev) => setDayModal({ date: ev.date, initialEvent: ev })}
           onSlotClick={(date, startTime, endTime) => setDayModal({ date, startAdd: true, startTime, endTime })}
         />
       )}

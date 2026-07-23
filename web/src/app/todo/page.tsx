@@ -61,7 +61,7 @@ export default function TodoPage() {
     return [...set]
   }, [todos, today])
 
-  const { activeTodos, completedTodos, activeCount, completedCount } = useMemo(() => {
+  const { activeTodos, completedTodos, activeCount, completedCount, visibleCount } = useMemo(() => {
     let list = todos.filter((t) => {
       // 완료 날짜가 오늘보다 이전이면 투두 목록에서 숨김 (캘린더 데이터는 유지)
       if (t.completed && t.completedAt && t.completedAt < today) return false
@@ -88,7 +88,7 @@ export default function TodoPage() {
     const visible        = todos.filter((t) => !(t.completed && t.completedAt && t.completedAt < today))
     const activeCount    = visible.filter((t) => !t.completed).length
     const completedCount = visible.filter((t) =>  t.completed).length
-    return { activeTodos, completedTodos, activeCount, completedCount }
+    return { activeTodos, completedTodos, activeCount, completedCount, visibleCount: visible.length }
   }, [todos, filter, sort, tagFilter, today])
 
   if (isLoading) return <LoadingSpinner message="할일 불러오는 중..." />
@@ -196,7 +196,7 @@ export default function TodoPage() {
       {/* 목록 */}
       {activeTodos.length === 0 && completedTodos.length === 0 ? (
         <div className="text-center py-16 text-neutral-600">
-          {todos.length === 0 ? (
+          {visibleCount === 0 ? (
             <div className="flex flex-col items-center gap-4">
               <p className="text-4xl">✅</p>
               <p className="text-sm">아직 할일이 없어요.</p>

@@ -71,6 +71,7 @@ export default function EventForm({
     }
   }, [categories, category])
   const endDateError = endDate && endDate < date
+  const timeError = !!(startTime && endTime && endTime <= startTime)
 
   return (
     <form
@@ -78,6 +79,7 @@ export default function EventForm({
         e.preventDefault()
         if (!title.trim()) { setTitleError(true); return }
         if (endDate && endDate < date) return
+        if (timeError) return
         onSubmit({ title: title.trim(), date, endDate, startTime, endTime, color, reminder, category })
       }}
       className="flex flex-col gap-4"
@@ -172,6 +174,7 @@ export default function EventForm({
           <TimeInput value={endTime} onChange={setEndTime} />
         </div>
       </div>
+      {timeError && <p className="text-xs text-red-400 -mt-2">종료 시간이 시작 시간보다 이전입니다.</p>}
 
       <div>
         <label className="text-xs text-neutral-400 mb-1.5 block">미리 알림</label>

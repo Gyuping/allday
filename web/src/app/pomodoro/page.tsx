@@ -48,7 +48,7 @@ const SIZE = 340
 
 export default function PomodoroPage() {
   const {
-    settings, phase, sessionCount, isRunning, secondsLeft,
+    settings, phase, sessionCount, totalFocusMinutes, isRunning, secondsLeft,
     setPhase, setRunning, setSecondsLeft, reset, updateSettings,
   } = usePomodoroStore()
 
@@ -291,9 +291,9 @@ export default function PomodoroPage() {
               </div>
               <div className="bg-white/5 border border-white/5 rounded-2xl p-4">
                 <p className="text-3xl font-bold text-white tabular-nums">
-                  {Math.floor(sessionCount * settings.workMinutes / 60) > 0
-                    ? `${Math.floor(sessionCount * settings.workMinutes / 60)}시간 ${sessionCount * settings.workMinutes % 60}분`
-                    : `${sessionCount * settings.workMinutes}분`}
+                  {Math.floor(totalFocusMinutes / 60) > 0
+                    ? `${Math.floor(totalFocusMinutes / 60)}시간 ${totalFocusMinutes % 60}분`
+                    : `${totalFocusMinutes}분`}
                 </p>
                 <p className="text-xs text-neutral-600 mt-1">총 집중 시간</p>
               </div>

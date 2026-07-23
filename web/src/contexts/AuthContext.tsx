@@ -40,12 +40,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getRedirectResult(auth)
       .then((result) => { if (result?.user) setUser(result.user) })
       .catch((e: unknown) => {
-        // 사용자가 직접 취소한 경우는 무시, 그 외는 에러 표시
         if (e instanceof FirebaseError && (
           e.code === 'auth/popup-closed-by-user' ||
           e.code === 'auth/cancelled-popup-request'
         )) return
         console.error('[getRedirectResult]', e)
+        setLoginError('로그인에 실패했어요. 다시 시도해주세요.')
       })
       .finally(() => {
         unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -67,7 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!(e instanceof FirebaseError)) throw e
       if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return
       if (e.code === 'auth/popup-blocked') {
-        await signInWithRedirect(auth, provider)
+        try {
+          await signInWithRedirect(auth, provider)
+        } catch (redirectErr) {
+          console.error('[signInWithRedirect]', redirectErr)
+          setLoginError('로그인에 실패했어요. 잠시 후 다시 시도해주세요.')
+        }
         return
       }
       setLoginError('로그인에 실패했어요. 잠시 후 다시 시도해주세요.')

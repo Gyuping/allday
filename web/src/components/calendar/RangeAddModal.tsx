@@ -34,9 +34,12 @@ export default function RangeAddModal({ startDate, endDate, onClose }: Props) {
     ? formatDateLabel(dates[0])
     : `${formatDateLabel(dates[0])} – ${formatDateLabel(dates[dates.length - 1])}`
 
+  const timeError = !!(startTime && endTime && endTime <= startTime)
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
+    if (timeError) return
     addEvent({
       id: crypto.randomUUID(),
       title: title.trim(),
@@ -102,6 +105,7 @@ export default function RangeAddModal({ startDate, endDate, onClose }: Props) {
                 <TimeInput value={endTime} onChange={setEndTime} />
               </div>
             </div>
+            {timeError && <p className="text-xs text-red-400 -mt-2">종료 시간이 시작 시간보다 이전입니다.</p>}
 
             <div>
               <label className="text-xs text-neutral-400 mb-1.5 block">카테고리</label>

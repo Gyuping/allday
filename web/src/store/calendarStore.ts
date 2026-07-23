@@ -55,7 +55,10 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
   updateEvent: (id, data) => {
     const { userId, events, pendingIds } = get()
     if (!userId) return
-    if (pendingIds.has(id)) return
+    if (pendingIds.has(id)) {
+      toast.error('이전 수정이 저장 중이에요. 잠시 후 다시 시도해주세요.')
+      return
+    }
     const prev = events.find((e) => e.id === id)
     if (!prev) return
 

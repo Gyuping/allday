@@ -54,5 +54,6 @@ if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
   }
 }
 
+// 클라이언트 전용 — 모든 호출부에서 if (!auth) / if (!db) 가드 필수
 export const auth = _auth!
 export const db   = _db!

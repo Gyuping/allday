@@ -83,13 +83,14 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
   deleteTodo: (id) => {
     const { userId, todos } = get()
     if (!userId) return
-    const idx  = todos.findIndex((t) => t.id === id)
-    const prev = todos[idx]
+    const prev = todos.find((t) => t.id === id)
     set((s) => ({ todos: s.todos.filter((t) => t.id !== id) }))
     fsDelete(userId, id).catch(() => {
       if (prev) set((s) => {
-        const restored = [...s.todos]
-        restored.splice(Math.min(idx, restored.length), 0, prev)
+        // 롤백 시점의 배열 기준으로 원래 위치에 복원
+        const currentIdx = s.todos.findIndex((t) => t.id === id)
+        if (currentIdx !== -1) return s  // 이미 있으면 패스
+        const restored = [...s.todos, prev]
         return { todos: restored }
       })
       toast.error('할일 삭제에 실패했어요.')
@@ -99,12 +100,13 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
   clearAll: () => {
     const { todos, userId } = get()
     if (!userId) return
-    const toDelete = todos.filter((t) => !t.completed)
-    const toKeep   = todos.filter((t) =>  t.completed)
-    if (toDelete.length === 0) return
-    set({ todos: toKeep })
-    fsClear(userId, toDelete.map((t) => t.id)).catch(() => {
-      set({ todos })
+    const toDeleteIds = todos.filter((t) => !t.completed).map((t) => t.id)
+    const toDeleteSet = new Set(toDeleteIds)
+    if (toDeleteIds.length === 0) return
+    set((s) => ({ todos: s.todos.filter((t) => t.completed) }))
+    fsClear(userId, toDeleteIds).catch(() => {
+      // 전체 스냅샷 덮어쓰기 대신 삭제했던 항목만 되돌림
+      set((s) => ({ todos: [...s.todos, ...todos.filter((t) => toDeleteSet.has(t.id))] }))
       toast.error('삭제에 실패했어요.')
     })
   },

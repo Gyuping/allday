@@ -33,6 +33,7 @@ export default function EditTodoModal({ todo, onSave, onClose }: Props) {
     <Modal title="할일 수정" onClose={onClose} maxWidth="max-w-md">
       <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
         <input ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)}
+          maxLength={100}
           placeholder="무엇을 해야 하나요?"
           className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors"
         />

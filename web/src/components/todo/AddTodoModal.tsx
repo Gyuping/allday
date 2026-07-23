@@ -42,6 +42,7 @@ export default function AddTodoModal({ onClose }: Props) {
           ref={titleRef}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          maxLength={100}
           placeholder="무엇을 해야 하나요?"
           className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-neutral-500 transition-colors"
         />
